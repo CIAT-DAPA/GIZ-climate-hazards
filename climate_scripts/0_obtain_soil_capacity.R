@@ -32,6 +32,7 @@ soil_data2$depth <- gsub('_250m_ll','',soil_data2$depth)
 
 fst::write_fst(soil_data2, '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/soil_data.fst')
 
+# Available soil water capacity
 for(i in 1:7){
   GSIF::AWCPTF(SNDPPT = soil_data2$SNDPPT[i],
                SLTPPT = soil_data2$SLTPPT[i],
