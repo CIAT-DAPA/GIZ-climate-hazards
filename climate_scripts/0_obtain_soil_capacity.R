@@ -32,39 +32,56 @@ soil_data2$depth <- gsub('_250m_ll','',soil_data2$depth)
 
 fst::write_fst(soil_data2, '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/soil_data.fst')
 
-# Available soil water capacity
-for(i in 1:7){
-  GSIF::AWCPTF(SNDPPT = soil_data2$SNDPPT[i],
-               SLTPPT = soil_data2$SLTPPT[i],
-               CLYPPT = soil_data2$CLYPPT[i],
-               ORCDRC = soil_data2$ORCDRC[i],
-               BLD = soil_data2$BLDFIE[i],
-               CEC = soil_data2$CECSOL[i],
-               PHIHOX = soil_data2$PHIHOX[i]) %>%
-    print()
+soil_data2$d <- lapply(1:nrow(soil_data2), function(i){
+  y <- GSIF::AWCPTF(SNDPPT = soil_data2$SNDPPT[i],
+                    SLTPPT = soil_data2$SLTPPT[i],
+                    CLYPPT = soil_data2$CLYPPT[i],
+                    ORCDRC = soil_data2$ORCDRC[i],
+                    BLD = soil_data2$BLDFIE[i],
+                    CEC = soil_data2$CECSOL[i],
+                    PHIHOX = soil_data2$PHIHOX[i])
+  y <- y$AWCh2 * 100
+  return(y)
+}) %>% base::unlist()
+
+soil_data3 <- soil_data2 %>%
+  dplyr::select(id,x,y,depth,d) %>%
+  tidyr::spread(key='depth',value='d')
+
+names(soil_data3)[4:ncol(soil_data3)] <- paste0('d.',c(0, 5, 15, 30, 60, 100, 200))
+soil_data3$rdepth <- root_depth
+soil_data3 <- soil_data3 %>%
+  dplyr::select('id','x','y','rdepth',paste0('d.',c(0, 5, 15, 30, 60, 100, 200)))
+
+soilcap_calc_mod <- function(x, minval, maxval) {
+  if(!is.na(x[4])){
+    rdepth <- max(c(x[4],minval)) #cross check
+    rdepth <- min(c(rdepth,maxval)) #cross-check
+    wc_df <- data.frame(depth=c(2.5,10,22.5,45,80,150),wc=(x[5:10])*.01)
+    if (!rdepth %in% wc_df$depth) {
+      wc_df1 <- wc_df[which(wc_df$depth < rdepth),]
+      wc_df2 <- wc_df[which(wc_df$depth > rdepth),]
+      y1 <- wc_df1$wc[nrow(wc_df1)]; y2 <- wc_df2$wc[1]
+      x1 <- wc_df1$depth[nrow(wc_df1)]; x2 <- wc_df2$depth[1]
+      ya <- (rdepth-x1) / (x2-x1) * (y2-y1) + y1
+      wc_df <- rbind(wc_df1,data.frame(depth=rdepth,wc=ya),wc_df2)
+    }
+    wc_df <- wc_df[which(wc_df$depth <= rdepth),]
+    wc_df$soilthick <- wc_df$depth - c(0,wc_df$depth[1:(nrow(wc_df)-1)])
+    wc_df$soilcap <- wc_df$soilthick * wc_df$wc
+    soilcp <- sum(wc_df$soilcap) * 10 #in mm
+    return(soilcp)
+  } else {
+    soilcp <- NA
+    return(soilcp)
+  }
 }
 
+# Calculate soil water holding capacity in mm, minval and maxval taken from
+# Fatondji et al. (2012) --in: Kihara, J. et al. Improving soil fert. recommendation using DSSAT
+soil_data$soilcp <- apply(soil_data, 1, FUN=soilcap_calc_mod, minval=45, maxval=100)
+save(soil_data, file='//dapadfs/workspace_cluster_8/Kenya_KACCAL/data/input_tables/soil_data.RData')
 
-# # Extract soil water holding capacity data on soil_data data.frame
-# depths <- c(25,100,225,450,800,1500)
-# for (s_i in 1:6) {
-#   #s_i <- 1
-#   tdepth <- depths[s_i]
-#   cat("...extracting depth=",tdepth*.1,"cm\n")
-#   rs <- raster(paste(isric_dir,"/af_AWCh2__M_sd",s_i,"_1km.tif",sep=""))
-#   rs <- crop(rs, extent(rs_prj))
-#   rs <- projectRaster(rs, crs=shp@proj4string)
-#   rs_res <- resample(rs_adm, rs, method="ngb")
-#   rs_pts <- as.data.frame(xyFromCell(rs_res, which(!is.na(rs_res[]))))
-#   rs_pts$id_coarse <- extract(rs_ids, cbind(x=rs_pts$x, y=rs_pts$y))
-#   rs_pts$value <- extract(rs, data.frame(x=rs_pts$x, y=rs_pts$y))
-#   rs_pts <- aggregate(rs_pts[,c("x","y","value")],by=list(id_coarse=rs_pts$id_coarse),FUN=function(x) {mean(x,na.rm=T)})
-#   rs_pts$x <- rs_pts$y <- NULL
-#   soil_data <- merge(soil_data, rs_pts, by="id_coarse")
-#   names(soil_data)[ncol(soil_data)] <- paste("d.",tdepth,sep="")
-#   rm(list=c("rs","rs_pts","rs_res"))
-# }
-# 
 # # ===================================================================== #
 # # AfSIS process
 # # ===================================================================== #
