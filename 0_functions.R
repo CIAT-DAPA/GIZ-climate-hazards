@@ -1,5 +1,5 @@
 # function to clean names
 cleanVC <- function(x){
-  x <- unlist(strsplit(x, ','))
-  return(tolower(trimws(x)))
+  x <- tolower(trimws(unlist(strsplit(x, ','))))
+  return(sort(unique(x)))
 }  

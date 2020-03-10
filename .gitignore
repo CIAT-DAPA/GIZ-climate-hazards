@@ -17,6 +17,10 @@
 # Project files
 *.Rproj
 
+# other data
+*.kml
+*.zip
+
 # Output files from R CMD check
 /*.Rcheck/
 
