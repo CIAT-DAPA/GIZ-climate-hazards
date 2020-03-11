@@ -41,7 +41,7 @@ soil_data2$d <- lapply(1:nrow(soil_data2), function(i){
                     CEC = soil_data2$CECSOL[i],
                     PHIHOX = soil_data2$PHIHOX[i]/10,
                     h1=-10, h2=-20, h3=-33)
-  y <- y$AWCh3 # * 100
+  y <- y$AWCh3
   return(y)
 }) %>% base::unlist()
 
