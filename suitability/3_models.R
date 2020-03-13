@@ -8,10 +8,18 @@ library(sf)
 library(stringr)
 rc <- st_read(paste0(indir,"genesys_rice.kml"))
 
+rc <- st_read("data/genesys_rice.kml")
+
 # are all of them rice?
-desc <- str_match(rc$description, "<p><i>(.*?)</i>")
+desc <- str_match(rc$Description, "<p><i>(.*?)</i>")
 desc <- gsub("(<p>|<i>|</i>)","",desc)
 unique(desc)
+
+rc <- st_read("G:\\My Drive\\work\\ciat\\giz_profiles\\data\\genesys_rice.kml")
+desc <- str_match(rc$Description, "<p><i>(.*?)</i>")
+desc <- gsub("(<p>|<i>|</i>)","",desc)
+unique(desc)
+table(desc)
 
 # worldclim current layers
 library(raster)
