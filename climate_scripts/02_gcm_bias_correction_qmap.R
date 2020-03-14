@@ -291,7 +291,7 @@ BC_Qmap <- function(country   = "Pakistan",
                                        tmin = list(tmin_fit),
                                        srad = list(srad_fit))
         if(!dir.exists(paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit'))){dir.create(paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit'),recursive = T)}
-        fst::write_fst(qmap_results,paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit/',px,'.fst'))
+        saveRDS(qmap_results,paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit/qm_',px,'.rds'))
         
         fut_clmt_bc <- data.frame(Date = fut_climate$Date,
                                   id   = fut_climate$id,
