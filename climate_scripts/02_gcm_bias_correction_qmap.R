@@ -48,8 +48,8 @@ BC_Qmap <- function(country   = "Pakistan",
   obsDir     <<- paste0(root,"/Chirps_Chirts")
   gcmHistDir <<- paste0(root,"/gcm_0_05deg_lat/",tolower(country),"/",gcm,"/1971_2000")
   gcmFutDir  <<- paste0(root,"/gcm_0_05deg_lat/",tolower(country),"/",gcm,"/",period,"/",rcp)
-  outDir     <<- ifelse(srad_avlb,paste0(root,"/bc_quantile_0_05deg_lat"),paste0(root,"/bc_quantile_0_05deg_lat_no_srad"))
-  if(!dir.exists(outDir)){dir.create(outDir)}
+  outDir     <<- ifelse(srad_avlb == T,paste0(root,"/bc_quantile_0_05deg_lat"),paste0(root,"/bc_quantile_0_05deg_lat_no_srad"))
+  if(!dir.exists(outDir)){dir.create(outDir,recursive = T)}
   
   # Identify pixels in country
   px_id <- vroom::vroom("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/id_country.csv", delim=',')
@@ -65,11 +65,10 @@ BC_Qmap <- function(country   = "Pakistan",
     avlb_px <- gtools::mixedsort(avlb_px)
   }
   
-  
   process_by_px <- avlb_px %>% purrr::map(.f = function(px){
     
     px <<- px
-    if(!dir.exists(paste0(outDir,'/',gcm,'/',period,'/',rcp))){dir.create(paste0(outDir,'/',gcm,'/',period,'/',rcp))}
+    if(!dir.exists(paste0(outDir,'/',gcm,'/',period,'/',rcp))){dir.create(paste0(outDir,'/',gcm,'/',period,'/',rcp),recursive = T)}
     out <- paste0(outDir,'/',gcm,'/',period,'/',rcp,'/',px,'.fst')
     if(!file.exists(out)){
       
@@ -291,7 +290,7 @@ BC_Qmap <- function(country   = "Pakistan",
                                        tmax = list(tmax_fit),
                                        tmin = list(tmin_fit),
                                        srad = list(srad_fit))
-        if(!dir.exists(paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit'))){dir.create(paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit'))}
+        if(!dir.exists(paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit'))){dir.create(paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit'),recursive = T)}
         fst::write_fst(qmap_results,paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit/',px,'.fst'))
         
         fut_clmt_bc <- data.frame(Date = fut_climate$Date,
@@ -337,7 +336,7 @@ BC_Qmap <- function(country   = "Pakistan",
       }
       fst::write_fst(fut_clmt_bc,out)
       cat(paste0('Pixel: ',px,' future was correctly processed.\n'))
-      if(!dir.exists(paste0(outDir,'/',gcm,'/1971_2000/',rcp))){dir.create(paste0(outDir,'/',gcm,'/1971_2000/',rcp))}
+      if(!dir.exists(paste0(outDir,'/',gcm,'/1971_2000/',rcp))){dir.create(paste0(outDir,'/',gcm,'/1971_2000/',rcp),recursive = T)}
       fst::write_fst(his_clmt_bc,paste0(outDir,'/',gcm,'/1971_2000/',rcp,'/',px,'.fst'))
       cat(paste0('Pixel: ',px,' historical was correctly processed.\n'))
       
