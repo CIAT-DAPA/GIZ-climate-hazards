@@ -9,347 +9,111 @@ options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(qmap, ncdf4, raster, tidyverse, compiler, vroom, gtools, fst))
 
-# Parallelization
-clusterExport <- local({
-  gets <- function(n, v) { assign(n, v, envir = .GlobalEnv); NULL }
-  function(cl, list, envir = .GlobalEnv) {
-    ## do this with only one clusterCall--loop on slaves?
-    for (name in list) {
-      clusterCall(cl, gets, name, get(name, envir = envir))
-    }
-  }
-})
-createCluster <- function(noCores, logfile = "/dev/null", export = NULL, lib = NULL) {
-  require(doSNOW)
-  cl <- makeCluster(noCores, type = "SOCK", outfile = logfile)
-  if(!is.null(export)) clusterExport(cl, export)
-  if(!is.null(lib)) {
-    plyr::l_ply(lib, function(dum) { 
-      clusterExport(cl, "dum", envir = environment())
-      clusterEvalQ(cl, library(dum, character.only = TRUE))
-    })
-  }
-  registerDoSNOW(cl)
-  return(cl)
-}
+# Paths
+root <- '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles'
+
+# Scripts
+source(paste0(root,'/scripts/win_parallelization.R'))
 
 # Quantile-mapping bias correction function for available pixels with solar radiation from NASA within a country
-BC_Qmap <- function(country   = "Pakistan",
+BC_Qmap <- function(country   = "Ethiopia",
+                    county    = "Arsi",
                     rcp       = "rcp85",
                     gcm       = "ipsl_cm5a_mr",
-                    period    = "2021_2045",
-                    srad_avlb = T)
+                    period    = "2021_2045")
 {
   
   cat(paste0(' *** Performing Quantile-mapping bias correction for available pixels with SRAD (NASA) within ',country,' in the period',period,', using: ',rcp,', GCM: ',gcm,'***\n'))
+  cat(paste0('>>> Loading obs data\n'))
   
-  # Establish directories
-  root       <<- "//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data"
-  obsDir     <<- paste0(root,"/Chirps_Chirts")
-  gcmHistDir <<- paste0(root,"/gcm_0_05deg_lat/",tolower(country),"/",gcm,"/1971_2000")
-  gcmFutDir  <<- paste0(root,"/gcm_0_05deg_lat/",tolower(country),"/",gcm,"/",period,"/",rcp)
-  outDir     <<- ifelse(srad_avlb == T,paste0(root,"/bc_quantile_0_05deg_lat"),paste0(root,"/bc_quantile_0_05deg_lat_no_srad"))
-  if(!dir.exists(outDir)){dir.create(outDir,recursive = T)}
-  
-  # Identify pixels in country
-  px_id <- vroom::vroom("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/id_country.csv", delim=',')
-  px_id <- px_id %>% dplyr::filter(Country == country)
-  
-  if(srad_avlb){
-    # Identify available pixels with solar radiation from NASA
-    avlb_px <- list.files(path=paste0(root,'/NASA'),full.names=F) %>% gsub('.fst','',.)
-    avlb_px <- avlb_px[avlb_px %in% px_id$id]
-    avlb_px <- gtools::mixedsort(avlb_px)
+  obsDir <<- paste0(root,"/data/observational_data/",tolower(country))
+  if(!file.exists(paste0(obsDir,'/',tolower(county),'.RDS'))){
+    his_obs <<- readRDS(paste0(obsDir,'/',tolower(county),'_prec_temp.RDS'))
   } else {
-    avlb_px <- px_id$id
-    avlb_px <- gtools::mixedsort(avlb_px)
+    his_obs <<- readRDS(paste0(obsDir,'/',tolower(county),'.RDS'))
   }
   
-  process_by_px <- avlb_px %>% purrr::map(.f = function(px){
-    
-    px <<- px
-    if(!dir.exists(paste0(outDir,'/',gcm,'/',period,'/',rcp))){dir.create(paste0(outDir,'/',gcm,'/',period,'/',rcp),recursive = T)}
-    out <- paste0(outDir,'/',gcm,'/',period,'/',rcp,'/',px,'.fst')
-    if(!file.exists(out)){
+  cat(paste0('>>> Loading historical GCM data\n'))
+  hisGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/1971_2000")
+  his_gcm <<- readRDS(paste0(hisGCMDir,'/',tolower(county),'.RDS'))
+  
+  cat(paste0('>>> Loading future GCM data\n'))
+  futGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/",period)
+  fut_gcm <<- readRDS(paste0(futGCMDir,'/',tolower(county),'.RDS'))
+  
+  bc_qmap <<- function(df_obs, df_his_gcm, df_fut_gcm){
+    if('srad' %in% colnames(df_obs)){
+      cat('> Fitting the Qmap function per variable\n')
+      prec_fit <- qmap::fitQmap(obs=df_obs$prec, mod=df_his_gcm$prec, method="RQUANT", qstep=0.01, wet.day=TRUE, na.rm=TRUE)
+      tmax_fit <- qmap::fitQmap(obs=df_obs$tmax, mod=df_his_gcm$tmax, method="RQUANT", qstep=0.01, wet.day=FALSE, na.rm=TRUE)
+      tmin_fit <- qmap::fitQmap(obs=df_obs$tmin, mod=df_his_gcm$tmin, method="RQUANT", qstep=0.01, wet.day=FALSE, na.rm=TRUE)
+      srad_fit <- qmap::fitQmap(obs=df_obs$srad, mod=df_his_gcm$srad, method="RQUANT", qstep=0.01, wet.day=FALSE, na.rm=TRUE)
       
-      cat(paste0('>>> Processing pixel: ',px,'...\n'))
+      cat('> Doing bias correction per variable historical GCMs\n')
+      bc_his_gcm <- df_his_gcm
+      bc_his_gcm$prec <- qmap::doQmap(x=df_his_gcm$prec, prec_fit, type="linear")
+      bc_his_gcm$tmax <- qmap::doQmap(x=df_his_gcm$tmax, tmax_fit, type="linear")
+      bc_his_gcm$tmin <- qmap::doQmap(x=df_his_gcm$tmin, tmin_fit, type="linear")
+      bc_his_gcm$srad <- qmap::doQmap(x=df_his_gcm$srad, srad_fit, type="linear")
       
-      cat(paste0('> Load historical observational data\n'))
-      # Historical time series (observations)
-      ts <- list.files(path=obsDir,full.names=F,pattern='*.fst$') %>% sort()
-      cl <- createCluster(30, export = list("ts","obsDir","px"), lib = list("tidyverse","fst"))
-      # Temperatures, precipitation, and solar radiation data
-      temp_prec <- ts %>% parallel::parLapply(cl, ., function(i){
-        # temp_prec <- ts %>% purrr::map(.f = function(i){
-        df <- fst::read_fst(paste0(obsDir,'/',i),from=as.numeric(px),to=as.numeric(px))
-        return(df)
-      }) %>%
-        do.call(rbind, .)
-      parallel::stopCluster(cl)
-      temp_prec <- temp_prec %>% dplyr::arrange(Date)
-      solr_radt <- fst::read_fst(paste0(root,"/NASA/",px,".fst"))
-      
-      obs_climate <- merge(x = temp_prec, y = solr_radt %>% dplyr::select('Date','srad'), by = 'Date'); rm(temp_prec, solr_radt, ts)
-      px_crds <<- obs_climate[,c('x','y')] %>% unique
-      
-      cat(paste0('> Load historical GCMs data\n'))
-      # Historical time series (GCMs)
-      prec_fls <<- list.files(path=paste0(gcmHistDir,'/by-month'),pattern='^prec',full.names=T)
-      cl       <- createCluster(30, export = list("prec_fls","px_crds","px"), lib = list("tidyverse","raster","fst"))
-      prec <- prec_fls %>%
-        parallel::parLapply(cl, ., function(x){
-          date <- basename(x)
-          date <- date %>% gsub('prec_','',.) %>% gsub('.nc','',.) %>% gsub('_','-',.)
-          rsts <- raster::stack(x)
-          prec <- raster::extract(x = rsts, y = px_crds) %>% as.numeric
-          df   <- data.frame(Date = paste0(date,'-',c(paste0('0',1:9),10:length(prec))),
-                             id   = px,
-                             x    = px_crds$x,
-                             y    = px_crds$y,
-                             prec = prec)
-          return(df)
-        }) %>% do.call(rbind, .)
-      parallel::stopCluster(cl)
-      rm(prec_fls)
-      prec <- prec %>% dplyr::arrange(Date)
-      
-      tmax_fls <<- list.files(path=paste0(gcmHistDir,'/by-month'),pattern='^tmax',full.names=T)
-      cl       <- createCluster(30, export = list("tmax_fls","px_crds","px"), lib = list("tidyverse","raster","fst"))
-      tmax <- tmax_fls %>%
-        parallel::parLapply(cl, ., function(x){
-          date <- basename(x)
-          date <- date %>% gsub('tmax_','',.) %>% gsub('.nc','',.) %>% gsub('_','-',.)
-          rsts <- raster::stack(x)
-          tmax <- raster::extract(x = rsts, y = px_crds) %>% as.numeric
-          df   <- data.frame(Date = paste0(date,'-',c(paste0('0',1:9),10:length(tmax))),
-                             id   = px,
-                             x    = px_crds$x,
-                             y    = px_crds$y,
-                             tmax = tmax)
-          return(df)
-        }) %>% do.call(rbind, .)
-      parallel::stopCluster(cl)
-      rm(tmax_fls)
-      tmax <- tmax %>% dplyr::arrange(Date)
-      
-      tmin_fls <<- list.files(path=paste0(gcmHistDir,'/by-month'),pattern='^tmin',full.names=T)
-      cl       <- createCluster(30, export = list("tmin_fls","px_crds","px"), lib = list("tidyverse","raster","fst"))
-      tmin <- tmin_fls %>%
-        parallel::parLapply(cl, ., function(x){
-          date <- basename(x)
-          date <- date %>% gsub('tmin_','',.) %>% gsub('.nc','',.) %>% gsub('_','-',.)
-          rsts <- raster::stack(x)
-          tmin <- raster::extract(x = rsts, y = px_crds) %>% as.numeric
-          df   <- data.frame(Date = paste0(date,'-',c(paste0('0',1:9),10:length(tmin))),
-                             id   = px,
-                             x    = px_crds$x,
-                             y    = px_crds$y,
-                             tmin = tmin)
-          return(df)
-        }) %>% do.call(rbind, .)
-      parallel::stopCluster(cl)
-      rm(tmin_fls)
-      tmin <- tmin %>% dplyr::arrange(Date)
-      
-      if(srad_avlb){
-        srad_fls <<- list.files(path=paste0(gcmHistDir,'/by-month'),pattern='^rsds',full.names=T)
-        cl       <- createCluster(30, export = list("srad_fls","px_crds","px"), lib = list("tidyverse","raster","fst"))
-        srad <- srad_fls %>%
-          parallel::parLapply(cl, ., function(x){
-            date <- basename(x)
-            date <- date %>% gsub('rsds_','',.) %>% gsub('.nc','',.) %>% gsub('_','-',.)
-            rsts <- raster::stack(x)
-            srad <- raster::extract(x = rsts, y = px_crds) %>% as.numeric
-            df   <- data.frame(Date = paste0(date,'-',c(paste0('0',1:9),10:length(srad))),
-                               id   = px,
-                               x    = px_crds$x,
-                               y    = px_crds$y,
-                               srad = srad)
-            return(df)
-          }) %>% do.call(rbind, .)
-        parallel::stopCluster(cl)
-        rm(srad_fls)
-        srad <- srad %>% dplyr::arrange(Date)
-        
-        his_climate <- cbind(prec,
-                             tmax %>% dplyr::select(tmax),
-                             tmin %>% dplyr::select(tmin),
-                             srad %>% dplyr::select(srad))
-        rm(prec, tmax, tmin, srad)
-        his_climate$srad <- his_climate$srad * 0.0864 # W/m-2 to MJ/m-2/day-1
-      } else {
-        his_climate <- cbind(prec,
-                             tmax %>% dplyr::select(tmax),
-                             tmin %>% dplyr::select(tmin))
-        rm(prec, tmax, tmin)
-      }
-      
-      cat(paste0('> Load future GCMs data\n'))
-      # Future time series (GCMs)
-      prec_fls <<- list.files(path=paste0(gcmFutDir,'/by-month'),pattern='^prec',full.names=T)
-      cl       <- createCluster(30, export = list("prec_fls","px_crds","px"), lib = list("tidyverse","raster","fst"))
-      prec <- prec_fls %>%
-        parallel::parLapply(cl, ., function(x){
-          date <- basename(x)
-          date <- date %>% gsub('prec_','',.) %>% gsub('.nc','',.) %>% gsub('_','-',.)
-          rsts <- raster::stack(x)
-          prec <- raster::extract(x = rsts, y = px_crds) %>% as.numeric
-          df   <- data.frame(Date = paste0(date,'-',c(paste0('0',1:9),10:length(prec))),
-                             id   = px,
-                             x    = px_crds$x,
-                             y    = px_crds$y,
-                             prec = prec)
-          return(df)
-        }) %>% do.call(rbind, .)
-      parallel::stopCluster(cl)
-      rm(prec_fls)
-      prec <- prec %>% dplyr::arrange(Date)
-      
-      tmax_fls <<- list.files(path=paste0(gcmFutDir,'/by-month'),pattern='^tmax',full.names=T)
-      cl       <- createCluster(30, export = list("tmax_fls","px_crds","px"), lib = list("tidyverse","raster","fst"))
-      tmax <- tmax_fls %>%
-        parallel::parLapply(cl, ., function(x){
-          date <- basename(x)
-          date <- date %>% gsub('tmax_','',.) %>% gsub('.nc','',.) %>% gsub('_','-',.)
-          rsts <- raster::stack(x)
-          tmax <- raster::extract(x = rsts, y = px_crds) %>% as.numeric
-          df   <- data.frame(Date = paste0(date,'-',c(paste0('0',1:9),10:length(tmax))),
-                             id   = px,
-                             x    = px_crds$x,
-                             y    = px_crds$y,
-                             tmax = tmax)
-          return(df)
-        }) %>% do.call(rbind, .)
-      parallel::stopCluster(cl)
-      rm(tmax_fls)
-      tmax <- tmax %>% dplyr::arrange(Date)
-      
-      tmin_fls <<- list.files(path=paste0(gcmFutDir,'/by-month'),pattern='^tmin',full.names=T)
-      cl       <- createCluster(30, export = list("tmin_fls","px_crds","px"), lib = list("tidyverse","raster","fst"))
-      tmin <- tmin_fls %>%
-        parallel::parLapply(cl, ., function(x){
-          date <- basename(x)
-          date <- date %>% gsub('tmin_','',.) %>% gsub('.nc','',.) %>% gsub('_','-',.)
-          rsts <- raster::stack(x)
-          tmin <- raster::extract(x = rsts, y = px_crds) %>% as.numeric
-          df   <- data.frame(Date = paste0(date,'-',c(paste0('0',1:9),10:length(tmin))),
-                             id   = px,
-                             x    = px_crds$x,
-                             y    = px_crds$y,
-                             tmin = tmin)
-          return(df)
-        }) %>% do.call(rbind, .)
-      parallel::stopCluster(cl)
-      rm(tmin_fls)
-      tmin <- tmin %>% dplyr::arrange(Date)
-      
-      if(srad_avlb){
-        srad_fls <<- list.files(path=paste0(gcmFutDir,'/by-month'),pattern='^rsds',full.names=T)
-        cl       <- createCluster(30, export = list("srad_fls","px_crds","px"), lib = list("tidyverse","raster","fst"))
-        srad <- srad_fls %>%
-          parallel::parLapply(cl, ., function(x){
-            date <- basename(x)
-            date <- date %>% gsub('rsds_','',.) %>% gsub('.nc','',.) %>% gsub('_','-',.)
-            rsts <- raster::stack(x)
-            srad <- raster::extract(x = rsts, y = px_crds) %>% as.numeric
-            df   <- data.frame(Date = paste0(date,'-',c(paste0('0',1:9),10:length(srad))),
-                               id   = px,
-                               x    = px_crds$x,
-                               y    = px_crds$y,
-                               srad = srad)
-            return(df)
-          }) %>% do.call(rbind, .)
-        parallel::stopCluster(cl)
-        rm(srad_fls)
-        srad <- srad %>% dplyr::arrange(Date)
-        
-        fut_climate <- cbind(prec,
-                             tmax %>% dplyr::select(tmax),
-                             tmin %>% dplyr::select(tmin),
-                             srad %>% dplyr::select(srad))
-        rm(prec, tmax, tmin, srad)
-        fut_climate$srad <- fut_climate$srad * 0.0864 # W/m-2 to MJ/m-2/day-1
-      } else {
-        fut_climate <- cbind(prec,
-                             tmax %>% dplyr::select(tmax),
-                             tmin %>% dplyr::select(tmin))
-        rm(prec, tmax, tmin)
-      }
-      
-      cat(paste0('> Applying Quantile mapping ...\n'))
-      
-      prec_fit <- qmap::fitQmap(obs=obs_climate$prec, mod=his_climate$prec, method="RQUANT", qstep=0.01, wet.day=TRUE, na.rm=TRUE)
-      tmax_fit <- qmap::fitQmap(obs=obs_climate$tmax, mod=his_climate$tmax, method="RQUANT", qstep=0.01, wet.day=FALSE, na.rm=TRUE)
-      tmin_fit <- qmap::fitQmap(obs=obs_climate$tmin, mod=his_climate$tmin, method="RQUANT", qstep=0.01, wet.day=FALSE, na.rm=TRUE)
-      if(srad_avlb){
-        srad_fit <- qmap::fitQmap(obs=obs_climate$srad, mod=his_climate$srad, method="RQUANT", qstep=0.01, wet.day=FALSE, na.rm=TRUE)
-        qmap_results <- tibble::tibble(id   = px,
-                                       x    = px_crds$x,
-                                       y    = px_crds$y,
-                                       prec = list(prec_fit),
-                                       tmax = list(tmax_fit),
-                                       tmin = list(tmin_fit),
-                                       srad = list(srad_fit))
-        if(!dir.exists(paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit'))){dir.create(paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit'),recursive = T)}
-        saveRDS(qmap_results,paste0(outDir,'/',gcm,'/',period,'/',rcp,'/qmap_fit/qm_',px,'.rds'))
-        
-        fut_clmt_bc <- data.frame(Date = fut_climate$Date,
-                                  id   = fut_climate$id,
-                                  x    = fut_climate$x,
-                                  y    = fut_climate$y,
-                                  prec = qmap::doQmap(x=fut_climate$prec, prec_fit, type="linear"),
-                                  tmax = qmap::doQmap(x=fut_climate$tmax, tmax_fit, type="linear"),
-                                  tmin = qmap::doQmap(x=fut_climate$tmin, tmin_fit, type="linear"),
-                                  srad = qmap::doQmap(x=fut_climate$srad, srad_fit, type="linear"))
-        
-        his_clmt_bc <- data.frame(Date = his_climate$Date,
-                                  id   = his_climate$id,
-                                  x    = his_climate$x,
-                                  y    = his_climate$y,
-                                  prec = qmap::doQmap(x=his_climate$prec, prec_fit, type="linear"),
-                                  tmax = qmap::doQmap(x=his_climate$tmax, tmax_fit, type="linear"),
-                                  tmin = qmap::doQmap(x=his_climate$tmin, tmin_fit, type="linear"),
-                                  srad = qmap::doQmap(x=his_climate$srad, srad_fit, type="linear"))
-      } else {
-        qmap_results <- tibble::tibble(id   = px,
-                                       x    = px_crds$x,
-                                       y    = px_crds$y,
-                                       prec = list(prec_fit),
-                                       tmax = list(tmax_fit),
-                                       tmin = list(tmin_fit))
-        
-        fut_clmt_bc <- data.frame(Date = fut_climate$Date,
-                                  id   = fut_climate$id,
-                                  x    = fut_climate$x,
-                                  y    = fut_climate$y,
-                                  prec = qmap::doQmap(x=fut_climate$prec, prec_fit, type="linear"),
-                                  tmax = qmap::doQmap(x=fut_climate$tmax, tmax_fit, type="linear"),
-                                  tmin = qmap::doQmap(x=fut_climate$tmin, tmin_fit, type="linear"))
-        
-        his_clmt_bc <- data.frame(Date = his_climate$Date,
-                                  id   = his_climate$id,
-                                  x    = his_climate$x,
-                                  y    = his_climate$y,
-                                  prec = qmap::doQmap(x=his_climate$prec, prec_fit, type="linear"),
-                                  tmax = qmap::doQmap(x=his_climate$tmax, tmax_fit, type="linear"),
-                                  tmin = qmap::doQmap(x=his_climate$tmin, tmin_fit, type="linear"))
-      }
-      fst::write_fst(fut_clmt_bc,out)
-      cat(paste0('Pixel: ',px,' future was correctly processed.\n'))
-      if(!dir.exists(paste0(outDir,'/',gcm,'/1971_2000/',rcp))){dir.create(paste0(outDir,'/',gcm,'/1971_2000/',rcp),recursive = T)}
-      fst::write_fst(his_clmt_bc,paste0(outDir,'/',gcm,'/1971_2000/',rcp,'/',px,'.fst'))
-      cat(paste0('Pixel: ',px,' historical was correctly processed.\n'))
+      cat('> Doing bias correction per variable future GCMs\n')
+      bc_fut_gcm <- df_fut_gcm
+      bc_fut_gcm$prec <- qmap::doQmap(x=df_fut_gcm$prec, prec_fit, type="linear")
+      bc_fut_gcm$tmax <- qmap::doQmap(x=df_fut_gcm$tmax, tmax_fit, type="linear")
+      bc_fut_gcm$tmin <- qmap::doQmap(x=df_fut_gcm$tmin, tmin_fit, type="linear")
+      bc_fut_gcm$srad <- qmap::doQmap(x=df_fut_gcm$srad, srad_fit, type="linear")
       
     } else {
-      cat(paste0('Pixel: ',px,' is already processed.\n'))
+      cat('> Fitting the Qmap function per variable\n')
+      prec_fit <- qmap::fitQmap(obs=df_obs$prec, mod=df_his_gcm$prec, method="RQUANT", qstep=0.01, wet.day=TRUE, na.rm=TRUE)
+      tmax_fit <- qmap::fitQmap(obs=df_obs$tmax, mod=df_his_gcm$tmax, method="RQUANT", qstep=0.01, wet.day=FALSE, na.rm=TRUE)
+      tmin_fit <- qmap::fitQmap(obs=df_obs$tmin, mod=df_his_gcm$tmin, method="RQUANT", qstep=0.01, wet.day=FALSE, na.rm=TRUE)
+      
+      cat('> Doing bias correction per variable historical GCMs\n')
+      bc_his_gcm <- df_his_gcm
+      bc_his_gcm$prec <- qmap::doQmap(x=df_his_gcm$prec, prec_fit, type="linear")
+      bc_his_gcm$tmax <- qmap::doQmap(x=df_his_gcm$tmax, tmax_fit, type="linear")
+      bc_his_gcm$tmin <- qmap::doQmap(x=df_his_gcm$tmin, tmin_fit, type="linear")
+      
+      cat('> Doing bias correction per variable future GCMs\n')
+      bc_fut_gcm <- df_fut_gcm
+      bc_fut_gcm$prec <- qmap::doQmap(x=df_fut_gcm$prec, prec_fit, type="linear")
+      bc_fut_gcm$tmax <- qmap::doQmap(x=df_fut_gcm$tmax, tmax_fit, type="linear")
+      bc_fut_gcm$tmin <- qmap::doQmap(x=df_fut_gcm$tmin, tmin_fit, type="linear")
     }
-    
+    bc_data <- list(His = bc_his_gcm,
+                    Fut = bc_fut_gcm)
+    return(list(bc_data))
+  }
+  
+  his_gcm_bc <<- his_gcm
+  fut_gcm_bc <<- fut_gcm
+  
+  cl <- createCluster(30, export = list("root","obsDir","his_obs","hisGCMDir","his_gcm","futGCMDir","fut_gcm","bc_qmap","his_gcm_bc","fut_gcm_bc"), lib = list("tidyverse","raster","qmap"))
+  
+  bc_data <- 1:nrow(his_obs) %>% parallel::parLapply(cl, ., function(i){
+    bc_data <<- bc_qmap(df_obs    = his_obs$Climate[[i]],
+                       df_his_gcm = his_gcm$Climate[[i]],
+                       df_fut_gcm = fut_gcm$Climate[[i]])
+    return(bc_data)
   })
-    
+  parallel::stopCluster(cl)
+  his_gcm_bc$Climate <- bc_data %>% purrr::map(1) %>% purrr::map(1)
+  fut_gcm_bc$Climate <- bc_data %>% purrr::map(1) %>% purrr::map(2)
+  
+  outHis <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/1971_2000/',tolower(county),'.RDS')
+  saveRDS(his_gcm_bc,outHis)
+  outFut <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period,'/',tolower(county),'.RDS')
+  saveRDS(fut_gcm_bc,outFut)
+  
 }
-BC_Qmap(country="Ethiopia",rcp="rcp85",gcm="ipsl_cm5a_mr",period="2021_2045",srad_avlb=T)
 
-periodList <- '2021_2045' # c('2041_2065')
+periodList <- c('2021_2045','2041_2065')
 rcpList    <- 'rcp85'
 gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
-ctryList   <- c('Ethiopia','Mali','Pakistan')
+ctryList   <- 'Ethiopia'
+for(p in periodList){
+  for(gcm in gcmList){
+    BC_Qmap(country='Ethiopia',county='Arsi',rcp='rcp85',gcm=gcm,period=p)
+  }
+}
