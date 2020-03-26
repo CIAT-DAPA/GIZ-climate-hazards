@@ -23,24 +23,6 @@ BC_Qmap <- function(country   = "Ethiopia",
                     period    = "2021_2045")
 {
   
-  cat(paste0(' *** Performing Quantile-mapping bias correction for available pixels with SRAD (NASA) within ',country,' in the period',period,', using: ',rcp,', GCM: ',gcm,'***\n'))
-  cat(paste0('>>> Loading obs data\n'))
-  
-  obsDir <<- paste0(root,"/data/observational_data/",tolower(country))
-  if(!file.exists(paste0(obsDir,'/',tolower(county),'.RDS'))){
-    his_obs <<- readRDS(paste0(obsDir,'/',tolower(county),'_prec_temp.RDS'))
-  } else {
-    his_obs <<- readRDS(paste0(obsDir,'/',tolower(county),'.RDS'))
-  }
-  
-  cat(paste0('>>> Loading historical GCM data\n'))
-  hisGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/1971_2000")
-  his_gcm <<- readRDS(paste0(hisGCMDir,'/',tolower(county),'.RDS'))
-  
-  cat(paste0('>>> Loading future GCM data\n'))
-  futGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/",period)
-  fut_gcm <<- readRDS(paste0(futGCMDir,'/',tolower(county),'.RDS'))
-  
   bc_qmap <<- function(df_obs, df_his_gcm, df_fut_gcm){
     if('srad' %in% colnames(df_obs)){
       cat('> Fitting the Qmap function per variable\n')
@@ -86,6 +68,24 @@ BC_Qmap <- function(country   = "Ethiopia",
     return(list(bc_data))
   }
   
+  cat(paste0(' *** Performing Quantile-mapping bias correction for available pixels with SRAD (NASA) within ',country,' in the period',period,', using: ',rcp,', GCM: ',gcm,'***\n'))
+  cat(paste0('>>> Loading obs data\n'))
+  
+  obsDir <<- paste0(root,"/data/observational_data/",tolower(country))
+  if(!file.exists(paste0(obsDir,'/',tolower(county),'.RDS'))){
+    his_obs <<- readRDS(paste0(obsDir,'/',tolower(county),'_prec_temp.RDS'))
+  } else {
+    his_obs <<- readRDS(paste0(obsDir,'/',tolower(county),'.RDS'))
+  }
+  
+  cat(paste0('>>> Loading historical GCM data\n'))
+  hisGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/1971_2000")
+  his_gcm <<- readRDS(paste0(hisGCMDir,'/',tolower(county),'.RDS'))
+  
+  cat(paste0('>>> Loading future GCM data\n'))
+  futGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/",period)
+  fut_gcm <<- readRDS(paste0(futGCMDir,'/',tolower(county),'.RDS'))
+  
   his_gcm_bc <<- his_gcm
   fut_gcm_bc <<- fut_gcm
   
@@ -101,10 +101,30 @@ BC_Qmap <- function(country   = "Ethiopia",
   his_gcm_bc$Climate <- bc_data %>% purrr::map(1) %>% purrr::map(1)
   fut_gcm_bc$Climate <- bc_data %>% purrr::map(1) %>% purrr::map(2)
   
-  outHis <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/1971_2000/',tolower(county),'.RDS')
-  saveRDS(his_gcm_bc,outHis)
-  outFut <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period,'/',tolower(county),'.RDS')
-  saveRDS(fut_gcm_bc,outFut)
+  pDir <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/1971_2000')
+  if(!dir.exists(pDir)){dir.create(pDir, recursive = T)}
+  fDir <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period)
+  if(!dir.exists(fDir)){dir.create(fDir, recursive = T)}
+  
+  if('srad' %in% colnames(his_obs)){
+    outHis <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/1971_2000/',tolower(county),'.RDS')
+    if(!file.exists(outHis)){
+      saveRDS(his_gcm_bc,outHis)
+    }
+    outFut <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period,'/',tolower(county),'.RDS')
+    if(!file.exists(outFut)){
+      saveRDS(fut_gcm_bc,outFut)
+    }
+  } else {
+    outHis <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/1971_2000/',tolower(county),'_prec_temp.RDS')
+    if(!file.exists(outHis)){
+      saveRDS(his_gcm_bc,outHis)
+    }
+    outFut <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period,'/',tolower(county),'_prec_temp.RDS')
+    if(!file.exists(outFut)){
+      saveRDS(fut_gcm_bc,outFut)
+    }
+  }
   
 }
 
@@ -115,5 +135,15 @@ ctryList   <- 'Ethiopia'
 for(p in periodList){
   for(gcm in gcmList){
     BC_Qmap(country='Ethiopia',county='Arsi',rcp='rcp85',gcm=gcm,period=p)
+  }
+}
+
+periodList <- c('2021_2045','2041_2065')
+rcpList    <- 'rcp85'
+gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
+# ctryList   <- 'Ethiopia'
+for(p in periodList){
+  for(gcm in gcmList){
+    BC_Qmap(country='Pakistan',county='Muzaffargarh',rcp='rcp85',gcm=gcm,period=p)
   }
 }
