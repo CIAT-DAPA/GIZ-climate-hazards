@@ -8,7 +8,7 @@ suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, ncdf4, sf, future, furrr, lubridate, glue, cowsay, vroom, sp, fst, compiler))
 
 country <- 'Pakistan'  #'Ethiopia'
-county  <- 'Muzaffargarh'
+county  <- 'Jhang'
 iso3c   <- 'PAK'
 adm_lvl <- 3
 
@@ -159,17 +159,17 @@ calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm
   }
   
 }
-calc_indices(country = 'Ethiopia',
-             county  = 'Arsi',
-             seasons = 1,
+calc_indices(country = 'Pakistan',
+             county  = 'Jhang',
+             seasons = 2,
              gcm     = NULL,
              period  = '1985_2015',
              time    = 'past')
 for(gcm in gcmList){
   for(period in periodList){
-    calc_indices(country = 'Ethiopia',
-                 county  = 'Arsi',
-                 seasons = 1,
+    calc_indices(country = 'Pakistan',
+                 county  = 'Jhang',
+                 seasons = 2,
                  gcm     = gcm,
                  period  = period,
                  time    = 'future')

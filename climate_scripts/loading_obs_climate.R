@@ -10,10 +10,16 @@ suppressMessages(pacman::p_load(tidyverse, raster, vroom, sp, fst))
 # country <- 'Ethiopia'
 # county  <- 'Arsi'
 
-country <- 'Mali'
-iso3c   <- 'MLI'
-adm_lvl <- 1
-counties <- c('Koulikoro','Sikasso','Kayes','Segou','Mopti')
+# country <- 'Mali'
+# iso3c   <- 'MLI'
+# adm_lvl <- 1
+# counties <- c('Koulikoro','Sikasso','Kayes','Segou','Mopti')
+# county <- counties[1]
+
+country <- 'Pakistan'
+iso3c   <- 'PAK'
+adm_lvl <- 3
+counties <- c('Ghotki')
 county <- counties[1]
 
 # Paths
