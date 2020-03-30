@@ -2,7 +2,7 @@ library(tidyverse)
 library(fst)
 
 country <- 'Pakistan' # Ethiopia
-county  <- 'Kashmore' # Arsi
+county  <- 'Muzaffargarh' # Arsi
 
 past    <- fst(paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/",country,"/past/",county,"_1985_2015.fst")) %>% data.frame
 futDir  <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/future')
@@ -37,28 +37,37 @@ df_ %>%
       sem.labs <- c('S:1','S:2')
       names(sem.labs) <- c('1','2')
     }
-    plt <- df_summ %>%
-      dplyr::filter(Serie == 'Past') %>%
-      ggplot2::ggplot(aes(x = Year, y = mean, colour = semester)) +
-      ggplot2::geom_line() +
-      ggplot2::scale_x_date(date_labels = "%Y", date_breaks = '10 years', limits = as.Date(c('1985-01-01', '2065-01-01'))) +
-      ggplot2::ylim(min(df_summ$mean)-5, max(df_summ$mean)+5) +
-      ggplot2::geom_line(data = df_summ %>% dplyr::filter(Serie == 'Fut'), aes(x = Year, y = mean, colour = semester)) +
-      ggplot2::geom_ribbon(data = df_summ %>% dplyr::filter(Serie == 'Fut'), aes(ymin = CI_lower, ymax = CI_upper, fill = semester), color = "grey70", alpha = 0.4) +
-      ggplot2::ylab('Average') +
-      ggplot2::labs(title    = tbl$Indices %>% unique,
-                    subtitle = paste0(country,", ",county),
-                    caption  = "Data source: Alliance Bioversity-CIAT") +
-      ggplot2::theme_bw() +
-      ggplot2::theme(axis.text       = element_text(size = 17),
-                     axis.title      = element_text(size = 20),
-                     legend.text     = element_text(size = 17),
-                     legend.title    = element_text(size = 20),
-                     plot.title      = element_text(size = 20),
-                     plot.subtitle   = element_text(size = 17),
-                     strip.text.x    = element_text(size = 17),
-                     legend.position = 'none') +
-      ggplot2::facet_wrap(~semester, labeller = labeller(semester = sem.labs)) +
-      ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/ts_',tbl$Indices %>% unique,'.png'), device = "png", width = 12, height = 6, units = "in")
-    return(plt)
+    df_summ_ <- df_summ %>%
+      dplyr::group_by(semester) %>%
+      dplyr::group_split(semester)
+    
+    1:length(df_summ_) %>%
+      purrr::map(.f = function(i){
+        df_summ2 <- df_summ_[[i]]
+        plt      <- df_summ2 %>%
+          dplyr::filter(Serie == 'Past') %>%
+          ggplot2::ggplot(aes(x = Year, y = mean, colour = semester)) +
+          ggplot2::geom_line() +
+          ggplot2::scale_x_date(date_labels = "%Y", date_breaks = '10 years', limits = as.Date(c('1985-01-01', '2065-01-01'))) +
+          ggplot2::ylim(min(df_summ2$mean)-5, max(df_summ2$mean)+5) +
+          ggplot2::geom_line(data = df_summ2 %>% dplyr::filter(Serie == 'Fut'), aes(x = Year, y = mean, colour = semester)) +
+          ggplot2::geom_ribbon(data = df_summ2 %>% dplyr::filter(Serie == 'Fut'), aes(ymin = CI_lower, ymax = CI_upper, fill = semester), color = "grey70", alpha = 0.4) +
+          ggplot2::ylab('Average') +
+          ggplot2::labs(title    = tbl$Indices %>% unique,
+                        subtitle = paste0(country,", ",county),
+                        caption  = "Data source: Alliance Bioversity-CIAT") +
+          ggplot2::theme_bw() +
+          ggplot2::theme(axis.text       = element_text(size = 17),
+                         axis.title      = element_text(size = 20),
+                         legend.text     = element_text(size = 17),
+                         legend.title    = element_text(size = 20),
+                         plot.title      = element_text(size = 20),
+                         plot.subtitle   = element_text(size = 17),
+                         strip.text.x    = element_text(size = 17),
+                         legend.position = 'none') +
+          ggplot2::facet_wrap(~semester, labeller = labeller(semester = sem.labs)) +
+          ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/ts_',tbl$Indices %>% unique,'_season_',i,'.png'), device = "png", width = 12, height = 6, units = "in")
+      })
+    
+    return(cat('Graphs done\n'))
   })
