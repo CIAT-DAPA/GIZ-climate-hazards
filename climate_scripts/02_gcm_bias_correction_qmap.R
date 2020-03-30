@@ -128,22 +128,12 @@ BC_Qmap <- function(country   = "Ethiopia",
   
 }
 
-# periodList <- c('2021_2045','2041_2065')
-# rcpList    <- 'rcp85'
-# gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
-# ctryList   <- 'Ethiopia'
-# for(p in periodList){
-#   for(gcm in gcmList){
-#     BC_Qmap(country='Ethiopia',county='Arsi',rcp='rcp85',gcm=gcm,period=p)
-#   }
-# }
-
 periodList <- c('2021_2045','2041_2065')
 rcpList    <- 'rcp85'
 gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 # ctryList   <- 'Ethiopia'
 for(p in periodList){
   for(gcm in gcmList){
-    BC_Qmap(country='Pakistan',county='Jhang',rcp='rcp85',gcm=gcm,period=p)
+    BC_Qmap(country='Pakistan',county='Kashmore',rcp='rcp85',gcm=gcm,period=p)
   }
 }

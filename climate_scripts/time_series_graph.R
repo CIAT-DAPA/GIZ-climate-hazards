@@ -2,7 +2,7 @@ library(tidyverse)
 library(fst)
 
 country <- 'Pakistan' # Ethiopia
-county  <- 'Rajan Pur' # Arsi
+county  <- 'Kashmore' # Arsi
 
 past    <- fst(paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/",country,"/past/",county,"_1985_2015.fst")) %>% data.frame
 futDir  <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/future')

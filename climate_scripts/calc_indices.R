@@ -7,8 +7,9 @@ options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, ncdf4, sf, future, furrr, lubridate, glue, cowsay, vroom, sp, fst, compiler))
 
-country <- 'Pakistan'  #'Ethiopia'
-county  <- 'Jhang'
+# Please check the file: Country_Counts.xlsx
+country <- 'Pakistan'
+county  <- 'Kashmore'
 iso3c   <- 'PAK'
 adm_lvl <- 3
 
@@ -160,7 +161,7 @@ calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm
   
 }
 calc_indices(country = 'Pakistan',
-             county  = 'Jhang',
+             county  = 'Kashmore',
              seasons = 2,
              gcm     = NULL,
              period  = '1985_2015',
@@ -168,7 +169,7 @@ calc_indices(country = 'Pakistan',
 for(gcm in gcmList){
   for(period in periodList){
     calc_indices(country = 'Pakistan',
-                 county  = 'Jhang',
+                 county  = 'Kashmore',
                  seasons = 2,
                  gcm     = gcm,
                  period  = period,
