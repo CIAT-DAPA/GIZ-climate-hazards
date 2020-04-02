@@ -68,7 +68,7 @@ BC_Qmap <- function(country   = "Ethiopia",
     return(list(bc_data))
   }
   
-  cat(paste0(' *** Performing Quantile-mapping bias correction for available pixels with SRAD (NASA) within ',country,' in the period',period,', using: ',rcp,', GCM: ',gcm,'***\n'))
+  cat(paste0(' *** Performing Quantile-mapping bias correction for available pixels with SRAD (NASA) within ',county,' in the period ',period,', using: ',rcp,', GCM: ',gcm,'***\n'))
   cat(paste0('>>> Loading obs data\n'))
   
   obsDir <<- paste0(root,"/data/observational_data/",tolower(country))
@@ -106,21 +106,21 @@ BC_Qmap <- function(country   = "Ethiopia",
   fDir <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period)
   if(!dir.exists(fDir)){dir.create(fDir, recursive = T)}
   
-  if('srad' %in% colnames(his_obs)){
-    outHis <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/1971_2000/',tolower(county),'.RDS')
+  if('srad' %in% colnames(his_obs$Climate[[1]])){
+    outHis <- paste0(pDir,'/',tolower(county),'.RDS')
     if(!file.exists(outHis)){
       saveRDS(his_gcm_bc,outHis)
     }
-    outFut <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period,'/',tolower(county),'.RDS')
+    outFut <- paste0(fDir,'/',tolower(county),'.RDS')
     if(!file.exists(outFut)){
       saveRDS(fut_gcm_bc,outFut)
     }
   } else {
-    outHis <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/1971_2000/',tolower(county),'_prec_temp.RDS')
+    outHis <- paste0(pDir,'/',tolower(county),'_prec_temp.RDS')
     if(!file.exists(outHis)){
       saveRDS(his_gcm_bc,outHis)
     }
-    outFut <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period,'/',tolower(county),'_prec_temp.RDS')
+    outFut <- paste0(fDir,'/',tolower(county),'_prec_temp.RDS')
     if(!file.exists(outFut)){
       saveRDS(fut_gcm_bc,outFut)
     }
@@ -131,7 +131,6 @@ BC_Qmap <- function(country   = "Ethiopia",
 periodList <- c('2021_2045','2041_2065')
 rcpList    <- 'rcp85'
 gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
-# ctryList   <- 'Ethiopia'
 for(p in periodList){
   for(gcm in gcmList){
     BC_Qmap(country='Pakistan',county='Kashmore',rcp='rcp85',gcm=gcm,period=p)
