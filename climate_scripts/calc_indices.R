@@ -7,7 +7,7 @@ options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, ncdf4, sf, future, furrr, lubridate, glue, cowsay, vroom, sp, fst, compiler))
 
-# Please check the file: Country_Counts.xlsx
+# Please check the correct county name within: Country_Counts.xlsx
 country <- 'Pakistan'
 county  <- 'Kashmore'
 iso3c   <- 'PAK'

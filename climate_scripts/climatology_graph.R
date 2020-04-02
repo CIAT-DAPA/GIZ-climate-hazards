@@ -1,8 +1,8 @@
 library(tidyverse)
 library(lubridate)
 
-country <- 'Pakistan'
-county  <- 'Muzaffargarh'
+country <- 'Ethiopia'
+county  <- 'Arsi'
 
 do_climatology <- function(country, county){
   
@@ -69,4 +69,4 @@ do_climatology <- function(country, county){
     ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology.png'), device = "png", width = 12, height = 6, units = "in")
   
 }
-do_climatology(country = 'Pakistan', county = 'Muzaffargarh')
+do_climatology(country = 'Ethiopia', county = 'Arsi')
