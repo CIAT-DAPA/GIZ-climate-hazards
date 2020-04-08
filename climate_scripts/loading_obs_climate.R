@@ -16,7 +16,7 @@ get_observational_data <- function(country = 'Pakistan',
   country <<- country
   county  <<- county
   # Paths
-  root <- '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles'
+  root <<- '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles'
   
   # Scripts
   source(paste0(root,'/scripts/win_parallelization.R'))
@@ -32,10 +32,10 @@ get_observational_data <- function(country = 'Pakistan',
   crd <<- vroom::vroom(paste0(root,'/data/id_country.csv'), delim = ',')
   crd <<- crd %>%
     dplyr::filter(Country == country)
-  pnt <<- crd %>% dplyr::select(x,y) %>% sp::SpatialPoints(coords = .)
-  crs(pnt) <<- crs(shp)
+  pnt <<- crd %>% dplyr::select('x','y') %>% sp::SpatialPoints(coords = .)
+  raster::crs(pnt) <<- raster::crs(shp)
   # Filter coordinates that are present in the county
-  pnt <<- sp::over(pnt, shp) %>% data.frame %>% dplyr::select(ISO) %>% complete.cases() %>% which()
+  pnt <<- sp::over(pnt, shp) %>% data.frame %>% dplyr::select('ISO') %>% complete.cases() %>% which()
   crd <<- crd[pnt,]
   crd <<- crd
   
@@ -66,7 +66,7 @@ get_observational_data <- function(country = 'Pakistan',
                               y       = crd$y,
                               ISO3    = crd$ISO3,
                               Country = crd$Country,
-                              Climate = temp_prec2 %>% purrr::map(function(tb){tbl <- tb %>% dplyr::select(id,Date,prec,tmax,tmin); return(tbl)}))
+                              Climate = temp_prec2 %>% purrr::map(function(tb){tbl <- tb %>% dplyr::select('id','Date','prec','tmax','tmin'); return(tbl)}))
     outDir <- paste0(root,'/data/observational_data/',tolower(country))
     if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
     out <- paste0(outDir,'/',tolower(county),'_prec_temp.RDS')
@@ -91,7 +91,7 @@ get_observational_data <- function(country = 'Pakistan',
           df <- fst::read_fst(x)
         })
         all_clim <- purrr::map2(.x = his_obs$Climate, .y = srad, .f = function(x, y){
-          z <- dplyr::left_join(x = x, y = y %>% dplyr::select(id, Date, srad), by = c('id','Date'))
+          z <- dplyr::left_join(x = x, y = y %>% dplyr::select('id', 'Date', 'srad'), by = c('id','Date')) # Previous: srad
           return(z)
         })
         his_obs$Climate <- all_clim
@@ -112,4 +112,4 @@ get_observational_data <- function(country = 'Pakistan',
   
 }
 # Run twice
-for(i in 1:2){get_observational_data(country='Pakistan',county='Muzaffargarh',iso3='PAK',adm_lvl=3)}
+for(i in 1:2){get_observational_data(country='Pakistan',county='Dadu',iso3='PAK',adm_lvl=3)}

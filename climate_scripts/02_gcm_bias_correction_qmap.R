@@ -127,7 +127,7 @@ BC_Qmap <- function(country   = "Ethiopia",
   }
   
 }
-
+# Run once
 periodList <- c('2021_2045','2041_2065')
 rcpList    <- 'rcp85'
 gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
