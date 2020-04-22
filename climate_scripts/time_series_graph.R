@@ -6,7 +6,7 @@ county  <- 'Arsi' # Arsi
 
 past    <- fst(paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/",country,"/past/",county,"_1985_2015.fst")) %>% data.frame
 futDir  <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/future')
-fut_fls <- list.files(futDir, pattern = county, recursive = T)
+fut_fls <- list.files(futDir, pattern = paste0('^',county,'_[0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9].fst'), recursive = T)
 fut_fls <- paste0(futDir,'/',fut_fls)
 future  <- fut_fls %>%
   purrr::map(.f = function(x){df <- fst(x) %>% data.frame; return(df)}) %>%
@@ -14,7 +14,7 @@ future  <- fut_fls %>%
 
 df  <- rbind(past, future)
 df_ <- df %>%
-  tidyr::pivot_longer(cols = 'CDD':'NT35', names_to = 'Indices', values_to = 'Value') %>%
+  tidyr::pivot_longer(cols = 'CDD':'ndws', names_to = 'Indices', values_to = 'Value') %>%
   dplyr::group_split(Indices)
 
 df_ %>%
@@ -22,8 +22,8 @@ df_ %>%
     df_summ <- tbl %>%
       dplyr::group_by(year,semester) %>%
       dplyr::summarise(n      = n(),
-                       mean   = mean(Value),
-                       sd     = sd(Value)) %>%
+                       mean   = mean(Value, na.rm = T),
+                       sd     = sd(Value, na.rm = T)) %>%
       dplyr::mutate(sem       = sd/sqrt(n-1),
                     CI_lower  = mean + qt((1-0.95)/2, n - 1) * sem,
                     CI_upper  = mean - qt((1-0.95)/2, n - 1) * sem,
@@ -66,7 +66,7 @@ df_ %>%
                          strip.text.x    = element_text(size = 17),
                          legend.position = 'none') +
           ggplot2::facet_wrap(~semester, labeller = labeller(semester = sem.labs)) +
-          ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/ts_',tbl$Indices %>% unique,'_season_',i,'.png'), device = "png", width = 12, height = 6, units = "in")
+          ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/ts_',tbl$Indices %>% unique,'_season_',i,'_new.png'), device = "png", width = 12, height = 6, units = "in")
       })
     
     return(cat('Graphs done\n'))

@@ -156,4 +156,4 @@ get_gcm_data <- function(country = 'Pakistan',
   
 }
 # Run once
-get_gcm_data(country='Pakistan',county='Kashmore',iso3='PAK',adm_lvl=3)
+get_gcm_data(country='Pakistan',county='Kurram',iso3='PAK',adm_lvl=3)

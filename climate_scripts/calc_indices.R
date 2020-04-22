@@ -13,6 +13,8 @@ county  <- 'Kashmore'
 iso3c   <- 'PAK'
 adm_lvl <- 3
 
+root <- '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles'
+
 # Load county shapefile
 shp <- raster::shapefile(paste0(root,'/data/shps/',country,'/',iso3c,'_adm',adm_lvl,'.shp'))
 glue::glue('shp <- shp[shp@data$NAME_{adm_lvl} == county,]') %>%
@@ -34,8 +36,6 @@ crd <<- crd
 gcmList <- c('ipsl_cm5a_mr','miroc_esm_chem','ncc_noresm1_m')
 timList <- c('past','future')
 periodList <- c('2021_2045','2041_2065')
-
-root <- '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles'
 
 source(paste0(root,'/scripts/indices.R'))
 
@@ -137,6 +137,29 @@ calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm
       clim_data <- readRDS(paste0(futDir,'/',tolower(county),'.RDS'))
     }
   }
+  
+  impute_missings <- function(tbl = clim_data){
+    Climate <- 1:nrow(tbl) %>%
+      purrr::map(.f = function(i){
+        df <- tbl$Climate[[i]]
+        if(sum(is.na(df$tmax)) > 0){
+          df$tmax[which(is.na(df$tmax))] <- median(df$tmax, na.rm = T)
+        }
+        if(sum(is.na(df$tmin)) > 0){
+          df$tmin[which(is.na(df$tmin))] <- median(df$tmin, na.rm = T)
+        }
+        if(sum(is.na(df$srad)) > 0){
+          df$srad[which(is.na(df$srad))] <- median(df$srad, na.rm = T)
+        }
+        if(sum(is.na(df$prec)) > 0){
+          df$prec[which(is.na(df$prec))] <- median(df$prec, na.rm = T)
+        }
+        return(df)
+      })
+    
+    return(Climate)
+  }
+  clim_data$Climate <- impute_missings(tbl = clim_data)
   
   clim_data <- clim_data %>% 
     dplyr::mutate(county = county, semester = seasons) %>%

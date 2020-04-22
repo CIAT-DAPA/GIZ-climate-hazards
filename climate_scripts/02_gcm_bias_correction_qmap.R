@@ -133,6 +133,6 @@ rcpList    <- 'rcp85'
 gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 for(p in periodList){
   for(gcm in gcmList){
-    BC_Qmap(country='Pakistan',county='Kashmore',rcp='rcp85',gcm=gcm,period=p)
+    BC_Qmap(country='Pakistan',county='Dadu',rcp='rcp85',gcm=gcm,period=p)
   }
 }

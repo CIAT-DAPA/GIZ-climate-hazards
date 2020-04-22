@@ -94,6 +94,10 @@ gcmDailyProcess <- function(country = 'Pakistan'){
 # gcmDailyProcess(country = 'Pakistan')
 # gcmDailyProcess(country = 'Mali')
 # gcmDailyProcess(country = 'Ethiopia')
+# gcmDailyProcess(country = 'Benin')
+# gcmDailyProcess(country = 'Nigeria')
+gcmDailyProcess(country = 'Burkina Faso')
+gcmDailyProcess(country = 'Cameroon')
 
 ### 2.1 GCM extract daily information process for future data
 gcmDailyFutureProcess <- function(country = 'Pakistan', rcp='rcp26', period='2021_2045'){
@@ -227,7 +231,11 @@ periodList <- c("2021_2045", "2041_2065")
 rcpList    <- paste("rcp", 85, sep="")
 # cntry <- 'Pakistan'
 # cntry <- 'Mali'
-cntry <- 'Ethiopia'
+# cntry <- 'Ethiopia'
+# cntry <- 'Benin'
+# cntry <- 'Nigeria'
+cntry <- 'Burkina Faso'
+cntry <- 'Cameroon'
 lapply(1:length(periodList), function(i){
   cat('Processing period:', periodList[[i]],'\n')
   library(parallel)
