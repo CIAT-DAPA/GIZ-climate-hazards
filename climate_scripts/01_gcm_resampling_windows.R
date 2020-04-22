@@ -367,7 +367,9 @@ gcmDailyResample <- function(country = 'Pakistan'){
 }
 # gcmDailyResample(country = 'Pakistan')
 # gcmDailyResample(country = 'Mali')
-gcmDailyResample(country = 'Ethiopia')
+# gcmDailyResample(country = 'Ethiopia')
+gcmDailyResample(country = 'Burkina Faso')
+gcmDailyResample(country = 'Cameroon')
 
 ### 2.2 GCM resample process for future data
 gcmDailyFutureResample <- function(country = 'Pakistan', rcp='rcp26', period='2021_2045'){
@@ -508,7 +510,9 @@ periodList <- c("2021_2045", "2041_2065")
 rcpList    <- paste("rcp", 85, sep="")
 # cntry <- 'Pakistan'
 # cntry <- 'Mali'
-cntry <- 'Ethiopia'
+# cntry <- 'Ethiopia'
+cntry <- 'Burkina Faso'
+cntry <- 'Cameroon'
 lapply(1:length(periodList), function(i){
   cat('Processing period:', periodList[[i]],'\n')
   # library(parallel)
