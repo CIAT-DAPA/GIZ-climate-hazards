@@ -1,19 +1,21 @@
 # Climate risk profiles
 
+Spatial resolution: 5 km
+
 ### Base scripts.
 
-* **indices.R**: contains basic functions necessary to calculate agro-climatic indices
+* **indices.R**: basic functions needed for calculating agro-climatic indices
 * **win_parallelization.R**: functions to parallelize in Windows SO
 
 ### Running order.
 
-* **00_obtain_soil_capacity.R**: calculate soil capacity as an input for posterior indices calculation
-* **01_gcm_resampling_windows.R**: process GCM data, clipping to study area, and apply resampling
-* **02_gcm_bias_correction_qmap.R**: develop quantile mapping as a technique for GCM bias correction
-* **03_loading_obs_climate.R**: prepare historic climate observational data
-* **04_loading_gcm_climate.R**: prepare GCM climate data
-* **05_calc_indices.R**: calculate partial agro-climatic indices, which do not require solar radiation data
-* **06_calc_indices_srad.R**: calculate agro-climatic indices, which requires of soil and solar radiation data
+* **00_obtain_soil_capacity.R**: calculate soil capacity for all countries at pixel level. Just need to be run once
+* **01_gcm_resampling_windows.R**: process GCM data (historic and future) at country level: clip to country extent and do resampling to 5 km. Just need to be run once per country
+* **02_loading_obs_climate.R**: prepare observational data (historic information of: tmax, tmin, prec, and srad) at county level in the required format to calculate agro-climatic indices
+* **03_loading_gcm_climate.R**: prepare GCM data at county level in the required format to calculate agro-climatic indices
+* **04_gcm_bias_correction_qmap.R**: develop bias correction by mean of quantile mapping at county level for GCM data
+* **05_calc_indices.R**: calculate partial agro-climatic indices. Those indices do not require solar radiation and soil data
+* **06_calc_indices_srad.R**: calculate agro-climatic indices related with solar radiation and soil data
 * **07_graphs_do_climatology.R**: do a climatology graph using observational climate data
-* **08_graphs_do_time_series.R**: do time series per index/season using historic and future
-* **09_graphs_do_maps.R**: do maps for historic, future, and differences
+* **08_graphs_do_time_series.R**: do time series per index/seasons using historic and future information
+* **09_graphs_do_maps.R**: do maps per index/seasons for historic, future, and changes
