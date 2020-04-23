@@ -6,7 +6,13 @@ county  <- 'Arsi'
 
 do_climatology <- function(country, county){
   
-  site <- readRDS(paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/observational_data/",tolower(country),"/",tolower(county),"_prec_temp.RDS"))
+  input1 <- paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/observational_data/",tolower(country),"/",tolower(county),".RDS")
+  input2 <- paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/observational_data/",tolower(country),"/",tolower(county),"_prec_temp.RDS")
+  if(!file.exists(input1)){
+    site <- readRDS(input2)
+  } else {
+    site <- readRDS(input1)
+  }
   if(nrow(site) > 100){
     set.seed(1235)
     smpl <- sample(x = 1:nrow(site), size = 100, replace = F) %>% sort

@@ -1,45 +1,52 @@
-# Calculate agro-climatic indices
+# Calculate agro-climatic partial indices
 # A. Esquivel and H. Achicanoy
-# CIAT,2020
+# CIAT, 2020
 
 options(warn = -1, scipen = 999)
 
 suppressMessages(library(pacman))
-suppressMessages(pacman::p_load(tidyverse, raster, ncdf4, sf, future, furrr, lubridate, glue, cowsay, vroom, sp, fst, compiler))
+suppressMessages(pacman::p_load(tidyverse, raster, ncdf4, sf, future, furrr, lubridate, glue, vroom, sp, fst, compiler))
 
-# Please check the correct county name within: Country_Counts.xlsx
-country <- 'Pakistan'
-county  <- 'Kashmore'
-iso3c   <- 'PAK'
-adm_lvl <- 3
+OSys <- Sys.info()[1]
+root <<- switch(OSys,
+                'Linux'   = '/home/jovyan/work/cglabs',
+                'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
 
-root <- '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles'
-
-# Load county shapefile
-shp <- raster::shapefile(paste0(root,'/data/shps/',country,'/',iso3c,'_adm',adm_lvl,'.shp'))
-glue::glue('shp <- shp[shp@data$NAME_{adm_lvl} == county,]') %>%
-  as.character %>%
-  parse(text = .) %>%
-  eval(expr = ., envir = .GlobalEnv)
-
-# Load id coords
-crd <- vroom(paste0(root,'/data/id_country.csv'), delim = ',')
-crd <- crd %>%
-  dplyr::filter(Country == country)
-pnt <- crd %>% dplyr::select(x,y) %>% sp::SpatialPoints(coords = .)
-crs(pnt) <- crs(shp)
-# Filter coordinates that are present in the county
-pnt <- sp::over(pnt, shp) %>% data.frame %>% dplyr::select(ISO) %>% complete.cases() %>% which()
-crd <- crd[pnt,]
-crd <<- crd
-
-gcmList <- c('ipsl_cm5a_mr','miroc_esm_chem','ncc_noresm1_m')
-timList <- c('past','future')
-periodList <- c('2021_2045','2041_2065')
-
-source(paste0(root,'/scripts/indices.R'))
-
-calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm = 'ipsl_cm5a_mr', period = '2041_2065', time = 'future'){
+calc_indices <- function(country = 'Ethiopia',
+                         county  = 'Arsi',
+                         iso3c   = 'ETH',
+                         adm_lvl = 2,
+                         seasons = 1,
+                         gcm     = 'ipsl_cm5a_mr',
+                         period  = '2041_2065',
+                         time    = 'future'){
+  
+  country <<- country
+  county  <<- county
+  
+  # Load county shapefile
+  shp <<- raster::shapefile(paste0(root,'/data/shps/',country,'/',iso3c,'_adm',adm_lvl,'.shp'))
+  glue::glue('shp <<- shp[shp@data$NAME_{adm_lvl} == county,]') %>%
+    as.character %>%
+    parse(text = .) %>%
+    eval(expr = ., envir = .GlobalEnv)
+  
+  # Load id coords
+  crd <- vroom(paste0(root,'/data/id_all_country.csv'), delim = ',')
+  crd <- crd %>%
+    dplyr::filter(Country == country)
+  pnt <- crd %>% dplyr::select(x,y) %>% sp::SpatialPoints(coords = .)
+  crs(pnt) <- crs(shp)
+  # Filter coordinates that are present in the county
+  pnt <- sp::over(pnt, shp) %>% data.frame %>% dplyr::select(ISO) %>% complete.cases() %>% which()
+  crd <- crd[pnt,]
+  crd <<- crd
+  
+  gcmList <- c('ipsl_cm5a_mr','miroc_esm_chem','ncc_noresm1_m')
+  timList <- c('past','future')
+  periodList <- c('2021_2045','2041_2065')
+  
+  source(paste0(root,'/scripts/indices.R'))
   
   # Paths
   obsDir <- paste0(root,'/data/observational_data/',tolower(country))
@@ -177,7 +184,7 @@ calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm
   
   data_with_C_index <- index_by_pixel %>% dplyr::select(-climate)
   if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
-  out <- paste0(outDir,'/',county,'_',period,'.fst')
+  out <- paste0(outDir,'/',county,'_',period,'_prec_temp.fst')
   if(!file.exists(out)){
     fst::write_fst(x = data_with_C_index %>% dplyr::select(-season, -sum.ind), path = out)
   }
@@ -185,6 +192,8 @@ calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm
 }
 calc_indices(country = 'Pakistan',
              county  = 'Kashmore',
+             iso3c   = 'PAK',
+             adm_lvl = 3,
              seasons = 2,
              gcm     = NULL,
              period  = '1985_2015',
@@ -193,6 +202,8 @@ for(gcm in gcmList){
   for(period in periodList){
     calc_indices(country = 'Pakistan',
                  county  = 'Kashmore',
+                 iso3c   = 'PAK',
+                 adm_lvl = 3,
                  seasons = 2,
                  gcm     = gcm,
                  period  = period,

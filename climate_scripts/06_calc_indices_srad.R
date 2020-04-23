@@ -1,240 +1,211 @@
-# =-------------------------------------------------------------------
-# Climate Indexes Project
-# Alejandra E. - Harold A. 
-# April - 2020
-# =-------------------------------------------------------------------
-
-# =--------------------
-rm(list = ls())
-gc(reset = TRUE)# 
+# Calculate agro-climatic indices related with solar radiation and soil data
+# A. Esquivel and H. Achicanoy
+# CIAT, 2020
 
 options(warn = -1, scipen = 999)
 
 suppressMessages(library(pacman))
-suppressMessages(pacman::p_load(tidyverse, raster, ncdf4, sf, future, furrr, lubridate, glue, cowsay, vroom, sp, fst, compiler, ggspatial))
+suppressMessages(pacman::p_load(tidyverse, raster, ncdf4, sf, future, furrr, lubridate, glue, vroom, sp, fst, compiler))
 
-# =---------------
-root <- '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles'
+OSys <- Sys.info()[1]
+root <<- switch(OSys,
+                'Linux'   = '/home/jovyan/work/cglabs',
+                'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
 
-# =---------- Functions... 
-
-# =-----------------------------------------------
-# Estas estan probadas que funcionan bien...
-# =-----------------------------------------------
-
-source(paste0(root,'/scripts/indices.R'))
-
-# Main functions
-run_each_semester <<- function(one, semester){
+calc_indices_srad <- function(country = 'Ethiopia',
+                              county  = 'Arsi',
+                              iso3c   = 'ETH',
+                              adm_lvl = 2,
+                              seasons = 1,
+                              gcm     = 'ipsl_cm5a_mr',
+                              period  = '2041_2065',
+                              time    = 'future'){
   
-  one2 <- one %>%
-    dplyr::select(id, year) %>%
-    unique()
+  country <<- country
+  county  <<- county
   
-  one2 <- one2 %>%
-    dplyr::mutate(season = purrr::map(.x =year, .f = function(y){
-      oi = list(rsum.lapply(x = filter(one, year == y)$prec %>% as.numeric, n = 150))[[1]] } ) )
+  # Load county shapefile
+  shp <<- raster::shapefile(paste0(root,'/data/shps/',country,'/',iso3c,'_adm',adm_lvl,'.shp'))
+  glue::glue('shp <<- shp[shp@data$NAME_{adm_lvl} == county,]') %>%
+    as.character %>%
+    parse(text = .) %>%
+    eval(expr = ., envir = .GlobalEnv)
   
-  one2 <- one2 %>%
-    mutate(sum.ind = purrr::map(.x = season, function(y){list(y[[which.max(cumulative.r.sum(y[[1]]))]])[[1]]}))
-
-  return(one2)}
-
-reading_run_pys   <<- function(px){
+  # Load id coords
+  crd <- vroom(paste0(root,'/data/id_all_country.csv'), delim = ',')
+  crd <- crd %>%
+    dplyr::filter(Country == country)
+  pnt <- crd %>% dplyr::select(x,y) %>% sp::SpatialPoints(coords = .)
+  crs(pnt) <- crs(shp)
+  # Filter coordinates that are present in the county
+  pnt <- sp::over(pnt, shp) %>% data.frame %>% dplyr::select(ISO) %>% complete.cases() %>% which()
+  crd <- crd[pnt,]
+  crd <<- crd
   
-  id <- px$id ; semester <- px$semester ; ISO3 <- px$ISO3 ; county <- px$county; soilcp <- px$soilcp
+  gcmList <- c('ipsl_cm5a_mr','miroc_esm_chem','ncc_noresm1_m')
+  timList <- c('past','future')
+  periodList <- c('2021_2045','2041_2065')
   
-  if(semester == 2){
-    # Si se tienen 2 se tiene un semestres...
-    # semester = 2
-    data_s <-  dplyr::select(px, Climate)  %>% unnest() %>%
-      mutate(year = lubridate::year(Date), month = lubridate::month(Date),
-             semester = ifelse(month < 7, 1, 2)) %>%
-      dplyr::select(-month)
+  source(paste0(root,'/scripts/indices.R'))
+  # Main functions
+  run_each_semester <<- function(one, semester){
     
-    one <- data_s %>%
-      dplyr::select(id, semester,  year, prec, tmax, tmin) %>%
-      nest(-semester)
+    one2 <- one %>%
+      dplyr::select(id, year) %>%
+      unique()
     
-    data_base <- purrr::map2(.x = one$data, .y = one$semester, .f = run_each_semester) %>% bind_rows()
+    one2 <- one2 %>%
+      dplyr::mutate(season = purrr::map(.x =year, .f = function(y){
+        oi = list(rsum.lapply(x = filter(one, year == y)$prec %>% as.numeric, n = 150))[[1]] } ) )
     
-  }else if(semester == 1){
+    one2 <- one2 %>%
+      mutate(sum.ind = purrr::map(.x = season, function(y){list(y[[which.max(cumulative.r.sum(y[[1]]))]])[[1]]}))
     
-    one  <- dplyr::select(px, Climate)  %>% unnest() %>%
-      mutate(year = lubridate::year(Date)) %>%
-      dplyr::select(id, year, prec, tmax, tmin)
+    return(one2)}
+  reading_run_pys   <<- function(px){
     
+    id <- px$id ; semester <- px$semester ; ISO3 <- px$ISO3 ; county <- px$county; soilcp <- px$soilcp
     
-    data_base <- run_each_semester(one = one, semester =  1)
-    
-  }else{ data_base <- NULL}
-  
-  return(data_base)}
-
-# =-----
-GSEASProcess <- function(df){
-  
-  cons <- unique(df$id)
-  path <- unique(df$path)
-  
-  out_all <- df
-  srad_miss <- which(is.na(out_all$srad)) %>%
-    purrr::map(function(i){
-      out_all$srad[(i-1):(i+1)] %>% mean(., na.rm = T)
-    }) %>%
-    unlist()
-  soilcp <- out_all$soilcp %>% unique
-  out_all$srad[which(is.na(out_all$srad))] <- srad_miss
-  if(!is.na(soilcp)){
-    
-    watbal_loc <- watbal_wrapper(out_all=out_all, soilcp=soilcp) # If we need more indexes are here
-    watbal_loc$TAV <- (watbal_loc$tmin + watbal_loc$tmax)/2
-    
-    # Esta linea linea se debe modificar. 
-    fst::write_fst(watbal_loc, glue::glue('{path}/wb_{cons}.fst'))
-    
-    watbal_loc <- watbal_loc[,c('Date','id','x','y','TAV','ERATIO')]
-    watbal_loc$GDAY <- ifelse(watbal_loc$TAV >= 6 & watbal_loc$ERATIO >= 0.35, yes=1, no=0)
-    
-    watbal_loc$Year <- lubridate::year(watbal_loc$Date %>% lubridate::as_date())
-    years_analysis <- watbal_loc$Year %>% unique()
-    
-    ### CONDITIONS TO HAVE IN ACCOUNT
-    # Length of growing season per year
-    # Start: 5-consecutive growing days.
-    # End: 12-consecutive non-growing days.
-    
-    # Run process by year
-    lgp_year_pixel <- lapply(1:length(years_analysis), function(k){
+    if(semester == 2){
+      # Si se tienen 2 se tiene un semestres...
+      # semester = 2
+      data_s <-  dplyr::select(px, Climate)  %>% unnest() %>%
+        mutate(year = lubridate::year(Date), month = lubridate::month(Date),
+               semester = ifelse(month < 7, 1, 2)) %>%
+        dplyr::select(-month)
       
-      # Subsetting by year
-      watbal_year <- watbal_loc[watbal_loc$Year==years_analysis[k],]
+      one <- data_s %>%
+        dplyr::select(id, semester,  year, prec, tmax, tmin) %>%
+        nest(-semester)
       
-      # Calculate sequences of growing and non-growing days within year
-      runsDF <- rle(watbal_year$GDAY)
-      runsDF <- data.frame(Lengths=runsDF$lengths, Condition=runsDF$values)
-      runsDF$Condition <- runsDF$Condition %>% tidyr::replace_na(replace = 0)
+      data_base <- purrr::map2(.x = one$data, .y = one$semester, .f = run_each_semester) %>% bind_rows()
       
-      # Identify start and extension of each growing season during year
-      if(!sum(runsDF$Lengths[runsDF$Condition==1] < 5) == length(runsDF$Lengths[runsDF$Condition==1])){
+    }else if(semester == 1){
+      
+      one  <- dplyr::select(px, Climate)  %>% unnest() %>%
+        mutate(year = lubridate::year(Date)) %>%
+        dplyr::select(id, year, prec, tmax, tmin)
+      
+      
+      data_base <- run_each_semester(one = one, semester =  1)
+      
+    }else{ data_base <- NULL}
+    
+    return(data_base)}
+  GSEASProcess      <<- function(df){
+    
+    cons <- unique(df$id)
+    path <- unique(df$path)
+    
+    out_all <- df
+    srad_miss <- which(is.na(out_all$srad)) %>%
+      purrr::map(function(i){
+        out_all$srad[(i-1):(i+1)] %>% mean(., na.rm = T)
+      }) %>%
+      unlist()
+    soilcp <- out_all$soilcp %>% unique
+    out_all$srad[which(is.na(out_all$srad))] <- srad_miss
+    if(!is.na(soilcp)){
+      
+      watbal_loc <- watbal_wrapper(out_all=out_all, soilcp=soilcp) # If we need more indexes are here
+      watbal_loc$TAV <- (watbal_loc$tmin + watbal_loc$tmax)/2
+      
+      # Esta linea linea se debe modificar. 
+      fst::write_fst(watbal_loc, glue::glue('{path}/wb_{cons}.fst'))
+      
+      watbal_loc <- watbal_loc[,c('Date','id','x','y','TAV','ERATIO')]
+      watbal_loc$GDAY <- ifelse(watbal_loc$TAV >= 6 & watbal_loc$ERATIO >= 0.35, yes=1, no=0)
+      
+      watbal_loc$Year <- lubridate::year(watbal_loc$Date %>% lubridate::as_date())
+      years_analysis <- watbal_loc$Year %>% unique()
+      
+      ### CONDITIONS TO HAVE IN ACCOUNT
+      # Length of growing season per year
+      # Start: 5-consecutive growing days.
+      # End: 12-consecutive non-growing days.
+      
+      # Run process by year
+      lgp_year_pixel <- lapply(1:length(years_analysis), function(k){
         
-        LGP <- 0; LGP_seq <- 0
-        for(i in 1:nrow(runsDF)){
-          if(runsDF$Lengths[i] >= 5 & runsDF$Condition[i] == 1){
-            LGP <- LGP + 1
-            LGP_seq <- c(LGP_seq, LGP)
-            LGP <- 0
-          } else {
-            if(LGP_seq[length(LGP_seq)]==1){
-              if(runsDF$Lengths[i] >= 12 & runsDF$Condition[i] == 0){
-                LGP <- 0
-                LGP_seq <- c(LGP_seq, LGP)
-              } else {
-                LGP <- LGP + 1
-                LGP_seq <- c(LGP_seq, LGP)
-                LGP <- 0
-              }
-            } else {
-              LGP <- 0
+        # Subsetting by year
+        watbal_year <- watbal_loc[watbal_loc$Year==years_analysis[k],]
+        
+        # Calculate sequences of growing and non-growing days within year
+        runsDF <- rle(watbal_year$GDAY)
+        runsDF <- data.frame(Lengths=runsDF$lengths, Condition=runsDF$values)
+        runsDF$Condition <- runsDF$Condition %>% tidyr::replace_na(replace = 0)
+        
+        # Identify start and extension of each growing season during year
+        if(!sum(runsDF$Lengths[runsDF$Condition==1] < 5) == length(runsDF$Lengths[runsDF$Condition==1])){
+          
+          LGP <- 0; LGP_seq <- 0
+          for(i in 1:nrow(runsDF)){
+            if(runsDF$Lengths[i] >= 5 & runsDF$Condition[i] == 1){
+              LGP <- LGP + 1
               LGP_seq <- c(LGP_seq, LGP)
+              LGP <- 0
+            } else {
+              if(LGP_seq[length(LGP_seq)]==1){
+                if(runsDF$Lengths[i] >= 12 & runsDF$Condition[i] == 0){
+                  LGP <- 0
+                  LGP_seq <- c(LGP_seq, LGP)
+                } else {
+                  LGP <- LGP + 1
+                  LGP_seq <- c(LGP_seq, LGP)
+                  LGP <- 0
+                }
+              } else {
+                LGP <- 0
+                LGP_seq <- c(LGP_seq, LGP)
+              }
             }
           }
-        }
-        LGP_seq <- c(LGP_seq, LGP)
-        LGP_seq <- LGP_seq[-c(1, length(LGP_seq))]
-        runsDF$gSeason <- LGP_seq; rm(i, LGP, LGP_seq)
-        LGP_seq <- as.list(split(which(runsDF$gSeason==1), cumsum(c(TRUE, diff(which(runsDF$gSeason==1))!=1))))
-        
-        # Calculate start date and extension of each growing season by year and pixel
-        growingSeason <- lapply(1:length(LGP_seq), function(g){
+          LGP_seq <- c(LGP_seq, LGP)
+          LGP_seq <- LGP_seq[-c(1, length(LGP_seq))]
+          runsDF$gSeason <- LGP_seq; rm(i, LGP, LGP_seq)
+          LGP_seq <- as.list(split(which(runsDF$gSeason==1), cumsum(c(TRUE, diff(which(runsDF$gSeason==1))!=1))))
           
-          LGP_ini <- sum(runsDF$Lengths[1:(min(LGP_seq[[g]])-1)]) + 1
-          LGP <- sum(runsDF$Lengths[LGP_seq[[g]]])
-          results <- data.frame(id=watbal_loc$id %>% unique, year=years_analysis[k], gSeason=g, SLGP=LGP_ini, LGP=LGP)
-          return(results)
+          # Calculate start date and extension of each growing season by year and pixel
+          growingSeason <- lapply(1:length(LGP_seq), function(g){
+            
+            LGP_ini <- sum(runsDF$Lengths[1:(min(LGP_seq[[g]])-1)]) + 1
+            LGP <- sum(runsDF$Lengths[LGP_seq[[g]]])
+            results <- data.frame(id=watbal_loc$id %>% unique, year=years_analysis[k], gSeason=g, SLGP=LGP_ini, LGP=LGP)
+            return(results)
+            
+          })
+          growingSeason <- do.call(rbind, growingSeason)
+          if(nrow(growingSeason)>2){
+            growingSeason <- growingSeason[rank(-growingSeason$LGP) %in% 1:2,]
+            growingSeason$gSeason <- rank(growingSeason$SLGP)
+            growingSeason <- growingSeason[order(growingSeason$gSeason),]
+          }
           
-        })
-        growingSeason <- do.call(rbind, growingSeason)
-        if(nrow(growingSeason)>2){
-          growingSeason <- growingSeason[rank(-growingSeason$LGP) %in% 1:2,]
-          growingSeason$gSeason <- rank(growingSeason$SLGP)
-          growingSeason <- growingSeason[order(growingSeason$gSeason),]
+        } else {
+          
+          growingSeason <- data.frame(id=watbal_loc$id %>% unique, year=years_analysis[k], gSeason = 1:2, SLGP = NA, LGP = NA)
+          
         }
         
-      } else {
+        print(k)
+        return(growingSeason)
         
-        growingSeason <- data.frame(id=watbal_loc$id %>% unique, year=years_analysis[k], gSeason = 1:2, SLGP = NA, LGP = NA)
-        
-      }
+      })
+      lgp_year_pixel <- do.call(rbind, lgp_year_pixel); rownames(lgp_year_pixel) <- 1:nrow(lgp_year_pixel)
       
-      print(k)
-      return(growingSeason)
+      return(lgp_year_pixel)
       
-    })
-    lgp_year_pixel <- do.call(rbind, lgp_year_pixel); rownames(lgp_year_pixel) <- 1:nrow(lgp_year_pixel)
+    } else {
+      return(cat('Check your inputs\n'))
+    }
     
-    return(lgp_year_pixel)
-    
-  } else {
-    return(cat('Check your inputs\n'))
   }
-  
-}
-
-# =-----
-# Aqui se calcula el indicador de ndws
-ndws_index <- function(row_1){
-  Eratio <- row_1 %>% dplyr::select(-season, -sum.ind) %>% unnest() %>% 
-    .[row_1$season[[1]][[2]][[2]],] %>% pull(ERATIO)
-  
-  ndws <- calc_wsdays(Eratio, season_ini=1, season_end=150, e_thresh=0.5)
-  
-  row_1 <- mutate(row_1, ndws = ndws) %>% dplyr::select(-`row_number()`, -season, -sum.ind)
-  
-  return(row_1)}
-
-
-
-# =----------------------------------------------------------------
-# =----------------------------------------------------------------
-cowsay::say('Reading data ---- :v', by = 'ghost')
-# =----------------------------------------------------------------
-
-# Please check the correct county name within: Country_Counts.xlsx
-country <- 'Ethiopia'
-county  <- 'Arsi'
-iso3c   <- 'ETH'
-adm_lvl <- 2
-
-
-# Load county shapefile
-shp <- raster::shapefile(paste0(root,'/data/shps/',country,'/',iso3c,'_adm',adm_lvl,'.shp'))
-glue::glue('shp <- shp[shp@data$NAME_{adm_lvl} == county,]') %>%
-  as.character %>%
-  parse(text = .) %>%
-  eval(expr = ., envir = .GlobalEnv)
-
-# Load id coords
-crd <- vroom(paste0(root,'/data/id_country.csv'), delim = ',')
-crd <- crd %>%
-  dplyr::filter(Country == country)
-pnt <- crd %>% dplyr::select(x,y) %>% sp::SpatialPoints(coords = .)
-crs(pnt) <- crs(shp)
-# Filter coordinates that are present in the county
-pnt <- sp::over(pnt, shp) %>% data.frame %>% dplyr::select(ISO) %>% complete.cases() %>% which()
-crd <- crd[pnt,]
-crd <<- crd
-
-gcmList <- c('ipsl_cm5a_mr','miroc_esm_chem','ncc_noresm1_m')
-timList <- c('past','future')
-periodList <- c('2021_2045','2041_2065')
-
-
-
-# 
-calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm = 'ipsl_cm5a_mr', period = '2041_2065', time = 'future'){
-  
-  # country = 'Ethiopia'; county = 'Arsi'; seasons = 1; period = '1985-2015'; time = 'past'
+  ndws_index        <<- function(row_1){
+    Eratio <- row_1 %>% dplyr::select(-season, -sum.ind) %>% unnest() %>% 
+      .[row_1$season[[1]][[2]][[2]],] %>% pull(ERATIO)
+    ndws <- calc_wsdays(Eratio, season_ini=1, season_end=150, e_thresh=0.5)
+    row_1 <- dplyr::mutate(row_1, ndws = ndws) %>% dplyr::select(-`row_number()`, -season, -sum.ind)
+    return(row_1)}
   
   # Paths
   obsDir <- paste0(root,'/data/observational_data/',tolower(country))
@@ -243,14 +214,13 @@ calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm
                    yes  = paste0(root,'/results/',country,'/',time),
                    no   = paste0(root,'/results/',country,'/',time,'/',gcm,'/',period))
   Med_Dir <- ifelse(test = time == 'past',
-                   yes  = paste0(root,'/data/metadata/watbal/',country,'/',time),
-                   no   = paste0(root,'/data/metadata/watbal/',country,'/',time,'/',gcm,'/',period))
+                    yes  = paste0(root,'/data/metadata/watbal/',country,'/',time),
+                    no   = paste0(root,'/data/metadata/watbal/',country,'/',time,'/',gcm,'/',period))
   # Soil data
   Soil <- fst::read.fst(paste0(root,'/data/soilcp_data.fst')) %>%
     tibble::as_tibble() %>%
     dplyr::select(id, soilcp) %>%
     dplyr::filter(id %in% dplyr::pull(crd, id))
-  
   
   # Aqui debo de revisar que debo de leer --- al ser radiación deberia ser los archivos normales. 
   # Deberia poner que si no tiene la radiación mande un aviso o pare. 
@@ -338,12 +308,10 @@ calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm
     bind_rows()
   tictoc::toc() # 3.58 seg con 2 cores cabe aclarar las pruebas son para 10 pixels. 
   
-  
   # Indices de radiacion solar. 
   rad_index <- first_Ind %>% 
     bind_rows() %>% as_tibble() %>% 
     full_join(full_data)
-  
   
   climate_index <- fst::fst(paste0(outDir,'/',county,'_',period,'_prec_temp.fst') ) %>% as_tibble()
   
@@ -353,29 +321,30 @@ calc_indices <- function(country = 'Ethiopia', county = 'Arsi', seasons = 1, gcm
     mutate(county = county) %>% 
     dplyr::select(id, x, y, ISO3, Country, county, everything(.))
   
-  
   if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
   out <- paste0(outDir,'/',county,'_',period,'.fst')
   if(!file.exists(out)){fst::write_fst(x = all_index , path = out)}
   
-return(all_index)}
-
-calc_indices(country = 'Ethiopia',
-             county  = 'Arsi',
-             seasons = 1,
-             gcm     = NULL,
-             period  = '1985_2015',
-             time    = 'past')
-
-
+  return(all_index)
+  
+}
+calc_indices_srad(country = 'Pakistan',
+                  county  = 'Muzaffargarh',
+                  iso3c   = 'PAK',
+                  adm_lvl = 3,
+                  seasons = 2,
+                  gcm     = NULL,
+                  period  = '1985_2015',
+                  time    = 'past')
 for(gcm in gcmList){
   for(period in periodList){
-    calc_indices(country = 'Ethiopia',
-                 county  = 'Arsi',
-                 seasons = 1,
-                 gcm     = gcm,
-                 period  = period,
-                 time    = 'future')
+    calc_indices_srad(country = 'Ethiopia',
+                      county  = 'Arsi',
+                      iso3c   = 'ETH',
+                      adm_lvl = 2,
+                      seasons = 1,
+                      gcm     = gcm,
+                      period  = period,
+                      time    = 'future')
   }
 }
-

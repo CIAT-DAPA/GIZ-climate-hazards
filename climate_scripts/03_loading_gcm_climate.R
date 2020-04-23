@@ -16,7 +16,10 @@ get_gcm_data <- function(country = 'Pakistan',
   country <<- country
   county  <<- county
   # Paths
-  root <<- '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles'
+  OSys <- Sys.info()[1]
+  root <<- switch(OSys,
+                  'Linux'   = '/home/jovyan/work/cglabs',
+                  'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
   
   # Scripts
   source(paste0(root,'/scripts/win_parallelization.R'))

@@ -8,7 +8,7 @@ pacman::p_load(raster, tidyverse, fst, GSIF, vroom)
 
 root_depth <- 60 # cm
 
-coords <- fst::read_fst('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/Chirps_Chirts/D_1985.01.01.fst')
+coords <- vroom::vroom('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/id_all_country.csv')
 coords <- coords %>% dplyr::select(id,x,y)
 
 soils_root <- '//catalogue/BaseLineData_cluster04/GLOBAL/Biofisico/SoilGrids250m'
