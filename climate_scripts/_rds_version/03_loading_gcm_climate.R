@@ -33,7 +33,7 @@ get_gcm_data <- function(country = 'Pakistan',
     eval(expr = ., envir = .GlobalEnv)
   
   # Load id coords
-  crd <<- vroom(paste0(root,'/data/id_all_country.csv'), delim = ',')
+  crd <<- vroom(paste0(root,'/data/id_country.csv'), delim = ',')
   crd <<- crd %>%
     dplyr::filter(Country == country)
   pnt <<- crd %>% dplyr::select(x,y) %>% sp::SpatialPoints(coords = .)
@@ -144,12 +144,11 @@ get_gcm_data <- function(country = 'Pakistan',
                                 ISO3    = crd$ISO3,
                                 Country = crd$Country,
                                 Climate = clim %>% dplyr::group_split(id))
-      his_gcm <- his_gcm %>% tidyr::unnest(.)
       out <- paste0(root,'/data/gcm_0_05deg_lat_county/',tolower(country),'/',gcm,'/',period)
       if(!dir.exists(out)){dir.create(out, recursive = T)}
-      out <- paste0(out,'/',tolower(county),'.fst')
+      out <- paste0(out,'/',tolower(county),'.RDS')
       if(!file.exists(out)){
-        fst::write_fst(his_gcm, out)
+        saveRDS(his_gcm, out)
       } else {
         cat('File exists\n')
       }

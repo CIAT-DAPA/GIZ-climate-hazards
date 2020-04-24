@@ -75,36 +75,19 @@ BC_Qmap <- function(country   = "Ethiopia",
   cat(paste0('>>> Loading obs data\n'))
   
   obsDir <<- paste0(root,"/data/observational_data/",tolower(country))
-  if(!file.exists(paste0(obsDir,'/',tolower(county),'.fst'))){
-    his_obs <<- fst::read_fst(paste0(obsDir,'/',tolower(county),'_prec_temp.fst'))
-    his_obs <<- his_obs %>%
-      tidyr::nest(Climate = c('id','Date','prec','tmax','tmin')) %>%
-      dplyr::rename(id = 'id1') %>%
-      dplyr::select(id, everything(.))
+  if(!file.exists(paste0(obsDir,'/',tolower(county),'.RDS'))){
+    his_obs <<- readRDS(paste0(obsDir,'/',tolower(county),'_prec_temp.RDS'))
   } else {
-    his_obs <<- fst::read_fst(paste0(obsDir,'/',tolower(county),'.fst'))
-    his_obs <<- his_obs %>%
-      tidyr::nest(Climate = c('id','Date','prec','tmax','tmin','srad')) %>%
-      dplyr::rename(id = 'id1') %>%
-      dplyr::select(id, everything(.))
+    his_obs <<- readRDS(paste0(obsDir,'/',tolower(county),'.RDS'))
   }
-    
   
   cat(paste0('>>> Loading historical GCM data\n'))
   hisGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/1971_2000")
-  his_gcm <<- fst::read_fst(paste0(hisGCMDir,'/',tolower(county),'.fst'))
-  his_gcm <<- his_gcm %>%
-    tidyr::nest(Climate = c('id','Date','prec','tmax','tmin','srad')) %>%
-    dplyr::rename(id = 'id1') %>%
-    dplyr::select(id, everything(.))
+  his_gcm <<- readRDS(paste0(hisGCMDir,'/',tolower(county),'.RDS'))
   
   cat(paste0('>>> Loading future GCM data\n'))
   futGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/",period)
-  fut_gcm <<- fst::read_fst(paste0(futGCMDir,'/',tolower(county),'.fst'))
-  fut_gcm <<- his_gcm %>%
-    tidyr::nest(Climate = c('id','Date','prec','tmax','tmin','srad')) %>%
-    dplyr::rename(id = 'id1') %>%
-    dplyr::select(id, everything(.))
+  fut_gcm <<- readRDS(paste0(futGCMDir,'/',tolower(county),'.RDS'))
   
   his_gcm_bc <<- his_gcm
   fut_gcm_bc <<- fut_gcm
@@ -119,9 +102,7 @@ BC_Qmap <- function(country   = "Ethiopia",
   })
   parallel::stopCluster(cl)
   his_gcm_bc$Climate <- bc_data %>% purrr::map(1) %>% purrr::map(1)
-  his_gcm_bc <- his_gcm_bc %>% tidyr::unnest(.)
   fut_gcm_bc$Climate <- bc_data %>% purrr::map(1) %>% purrr::map(2)
-  fut_gcm_bc <- fut_gcm_bc %>% tidyr::unnest(.)
   
   pDir <- paste0(root,'/data/bc_quantile_0_05deg_lat_county/',tolower(country),'/',gcm,'/1971_2000')
   if(!dir.exists(pDir)){dir.create(pDir, recursive = T)}
@@ -129,22 +110,22 @@ BC_Qmap <- function(country   = "Ethiopia",
   if(!dir.exists(fDir)){dir.create(fDir, recursive = T)}
   
   if('srad' %in% colnames(his_obs$Climate[[1]])){
-    outHis <- paste0(pDir,'/',tolower(county),'.fst')
+    outHis <- paste0(pDir,'/',tolower(county),'.RDS')
     if(!file.exists(outHis)){
-      fst::write_fst(his_gcm_bc,outHis)
+      saveRDS(his_gcm_bc,outHis)
     }
-    outFut <- paste0(fDir,'/',tolower(county),'.fst')
+    outFut <- paste0(fDir,'/',tolower(county),'.RDS')
     if(!file.exists(outFut)){
-      fst::write_fst(fut_gcm_bc,outFut)
+      saveRDS(fut_gcm_bc,outFut)
     }
   } else {
-    outHis <- paste0(pDir,'/',tolower(county),'_prec_temp.fst')
+    outHis <- paste0(pDir,'/',tolower(county),'_prec_temp.RDS')
     if(!file.exists(outHis)){
-      fst::write_fst(his_gcm_bc,outHis)
+      saveRDS(his_gcm_bc,outHis)
     }
-    outFut <- paste0(fDir,'/',tolower(county),'_prec_temp.fst')
+    outFut <- paste0(fDir,'/',tolower(county),'_prec_temp.RDS')
     if(!file.exists(outFut)){
-      fst::write_fst(fut_gcm_bc,outFut)
+      saveRDS(fut_gcm_bc,outFut)
     }
   }
   

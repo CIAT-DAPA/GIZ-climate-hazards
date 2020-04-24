@@ -32,7 +32,7 @@ get_observational_data <- function(country = 'Pakistan',
     eval(expr = ., envir = .GlobalEnv)
   
   # Load id coords
-  crd <<- vroom::vroom(paste0(root,'/data/id_all_country.csv'), delim = ',')
+  crd <<- vroom::vroom(paste0(root,'/data/id_country.csv'), delim = ',')
   crd <<- crd %>%
     dplyr::filter(Country == country)
   pnt <<- crd %>% dplyr::select('x','y') %>% sp::SpatialPoints(coords = .)
@@ -43,8 +43,8 @@ get_observational_data <- function(country = 'Pakistan',
   crd <<- crd
   
   # His obs
-  out  <- paste0(root,'/data/observational_data/',tolower(country),'/',tolower(county),'_prec_temp.fst')
-  out2 <- paste0(root,'/data/observational_data/',tolower(country),'/',tolower(county),'.fst')
+  out  <- paste0(root,'/data/observational_data/',tolower(country),'/',tolower(county),'_prec_temp.RDS')
+  out2 <- paste0(root,'/data/observational_data/',tolower(country),'/',tolower(county),'.RDS')
   if(!dir.exists(dirname(out))){dir.create(dirname(out), recursive = T)}
   if(!file.exists(out)){
     
@@ -70,22 +70,17 @@ get_observational_data <- function(country = 'Pakistan',
                               ISO3    = crd$ISO3,
                               Country = crd$Country,
                               Climate = temp_prec2 %>% purrr::map(function(tb){tbl <- tb %>% dplyr::select('id','Date','prec','tmax','tmin'); return(tbl)}))
-    his_obs <- his_obs %>% tidyr::unnest(.)
     outDir <- paste0(root,'/data/observational_data/',tolower(country))
     if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
-    out <- paste0(outDir,'/',tolower(county),'_prec_temp.fst')
+    out <- paste0(outDir,'/',tolower(county),'_prec_temp.RDS')
     
     cat('>>> Saving climate data file\n')
-    fst::write_fst(his_obs, out)
+    saveRDS(his_obs, out)
     
   } else {
     
     cat(paste0('Precipitation and temperature data file exists for county: ',county,'. Reading it ...\n'))
-    his_obs <- fst::read_fst(out)
-    his_obs <- his_obs %>%
-      tidyr::nest(Climate = c('id','Date','prec','tmax','tmin')) %>%
-      dplyr::rename(id = 'id1') %>%
-      dplyr::select(id, everything(.))
+    his_obs <- readRDS(out)
     
     if(!file.exists(out2)){
       
@@ -103,10 +98,9 @@ get_observational_data <- function(country = 'Pakistan',
           return(z)
         })
         his_obs$Climate <- all_clim
-        his_obs <- his_obs %>% tidyr::unnest(.)
         
         cat('>>> Saving climate data file\n')
-        fst::write_fst(his_obs, out2)
+        saveRDS(his_obs, out2)
         
       } else {
         cat('Not all SRAD files are available. Skipping reading ...\n')

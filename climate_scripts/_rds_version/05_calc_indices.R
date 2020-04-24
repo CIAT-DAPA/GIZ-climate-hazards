@@ -131,32 +131,16 @@ calc_indices <- function(country = 'Ethiopia',
     return(data_base)}
   
   if(time == 'past'){
-    if(!file.exists(paste0(obsDir,'/',tolower(county),'.fst'))){
-      clim_data <- fst::read_fst(paste0(obsDir,'/',tolower(county),'_prec_temp.fst'))
-      clim_data <- clim_data %>%
-        tidyr::nest(Climate = c('id','Date','prec','tmax','tmin')) %>%
-        dplyr::rename(id = 'id1') %>%
-        dplyr::select(id, everything(.))
+    if(!file.exists(paste0(obsDir,'/',tolower(county),'.RDS'))){
+      clim_data <- readRDS(paste0(obsDir,'/',tolower(county),'_prec_temp.RDS'))
     } else {
-      clim_data <- fst::read_fst(paste0(obsDir,'/',tolower(county),'.fst'))
-      clim_data <- clim_data %>%
-        tidyr::nest(Climate = c('id','Date','prec','tmax','tmin','srad')) %>%
-        dplyr::rename(id = 'id1') %>%
-        dplyr::select(id, everything(.))
+      clim_data <- readRDS(paste0(obsDir,'/',tolower(county),'.RDS'))
     }
   } else {
-    if(!file.exists(paste0(futDir,'/',tolower(county),'.fst'))){
-      clim_data <- fst::read_fst(paste0(futDir,'/',tolower(county),'_prec_temp.fst'))
-      clim_data <- clim_data %>%
-        tidyr::nest(Climate = c('id','Date','prec','tmax','tmin')) %>%
-        dplyr::rename(id = 'id1') %>%
-        dplyr::select(id, everything(.))
+    if(!file.exists(paste0(futDir,'/',tolower(county),'.RDS'))){
+      clim_data <- readRDS(paste0(futDir,'/',tolower(county),'_prec_temp.RDS'))
     } else {
-      clim_data <- fst::read_fst(paste0(futDir,'/',tolower(county),'.fst'))
-      clim_data <- clim_data %>%
-        tidyr::nest(Climate = c('id','Date','prec','tmax','tmin','srad')) %>%
-        dplyr::rename(id = 'id1') %>%
-        dplyr::select(id, everything(.))
+      clim_data <- readRDS(paste0(futDir,'/',tolower(county),'.RDS'))
     }
   }
   
