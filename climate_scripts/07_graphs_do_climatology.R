@@ -1,9 +1,6 @@
 library(tidyverse)
 library(lubridate)
 
-country <- 'Ethiopia'
-county  <- 'Arsi'
-
 do_climatology <- function(country, county){
   
   input1 <- paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/observational_data/",tolower(country),"/",tolower(county),".RDS")
@@ -48,7 +45,33 @@ do_climatology <- function(country, county){
   rlc <- mean(avrgs$Prec) / mean(avrgs$Tmax) * 2
   cols <- c("Tmin" = "blue", "Tmax" = "red")
   
-  all_clmtlgy %>%
+  outDir <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/')
+  if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
+  
+  indices <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/past/',county,'_1985_2015.fst')
+  if(file.exists(indices)){
+    tbl_indices <- fst::read_fst(indices)
+    tbl_summary <- tbl_indices %>%
+      dplyr::select(year,gSeason,SLGP,LGP) %>%
+      tidyr::drop_na() %>%
+      dplyr::group_by(year,gSeason) %>%
+      dplyr::summarise(SLGP_ = mean(SLGP, na.rm = T),
+                       LGP_  = mean(LGP, na.rm = T)) %>%
+      dplyr::filter(gSeason %in% 1:2) %>%
+      dplyr::mutate(SLGP_ = round(SLGP_),
+                    LGP_  = round(LGP_),
+                    ELGP_ = SLGP_ + LGP_,
+                    Start = as.Date(SLGP_, paste0(year,'-01-01')),
+                    End   = as.Date(ELGP_, paste0(year,'-01-01')),
+                    sMnth = lubridate::month(Start),
+                    eMnth = lubridate::month(End)) %>%
+      dplyr::select(year, gSeason, sMnth, eMnth) %>%
+      dplyr::group_by(gSeason) %>%
+      dplyr::summarise(S_month = round(median(sMnth)),
+                       E_month = round(median(eMnth)))
+  }
+  
+  gg <- all_clmtlgy %>%
     dplyr::group_by(Month) %>%
     dplyr::summarise(Prec = mean(Prec, na.rm = T),
                      Tmin = mean(Tmin, na.rm = T),
@@ -71,8 +94,36 @@ do_climatology <- function(country, county){
                    strip.text.x    = element_text(size = 17),
                    legend.position = "top") +
     ggplot2::scale_y_continuous(sec.axis = sec_axis(~./rlc, name = 'Temperature ºC')) +
-    ggplot2::scale_colour_discrete(name = "", labels = c("Tmin", "Tmax")) +
-    ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology.png'), device = "png", width = 12, height = 6, units = "in")
+    ggplot2::scale_colour_discrete(name = "", labels = c("Tmin", "Tmax"))
+  if(exists('tbl_summary')){
+    for(i in 1:nrow(tbl_summary)){
+      if(tbl_summary$S_month[i] == tbl_summary$E_month[i]){
+        gg <- gg +
+          ggplot2::annotate("rect", xmin=tbl_summary$S_month[i]-.5, xmax=tbl_summary$S_month[i]+.5, ymin=-Inf, ymax=Inf, alpha=.3, fill="forestgreen")
+      } else {
+        if(tbl_summary$S_month[i] < tbl_summary$E_month[i]){
+          gg <- gg +
+            ggplot2::annotate("rect", xmin=tbl_summary$S_month[i]-.5, xmax=tbl_summary$E_month[i]+.5, ymin=-Inf, ymax=Inf, alpha=.3, fill="forestgreen")
+        }
+      }
+    }
+  }
+    ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology_gSeasons.png'), plot = gg, device = "png", width = 12, height = 6, units = "in")
   
 }
-do_climatology(country = 'Ethiopia', county = 'Arsi')
+do_climatology(country = 'Pakistan', county = 'Kurram')
+counties <- c("Muzaffargarh",
+              "Rajan Pur",
+              "Jhang",
+              "Ghotki",
+              "Kashmore",
+              "Dadu",
+              "Mithi",
+              "Chitral",
+              "Dera Ismail Khan",
+              "South Waziristan",
+              "North Waziristan",
+              "Orakzai","Kurram")
+for(cnt in counties){
+  do_climatology(country = 'Pakistan', county = cnt)
+}

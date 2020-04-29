@@ -43,12 +43,12 @@ gcmDailyProcess <- function(country = 'Pakistan',
   names(mthMat) <- c("Mth", "MthMod", "Ndays")
   
   # Extent of country raster
-  all_countries <- getData("ISO3") %>% tibble::as.tibble() %>% dplyr::filter(NAME %in% country)
-  ctry_shp      <- lapply(all_countries$NAME, function(x) getData('GADM', country=x, level=0))
-  ref           <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
-  ref           <- raster::crop(x=ref,y=raster::extent(ctry_shp[[1]]))
-  ctry_rst      <- raster::rasterize(x=ctry_shp[[1]],y=ref)
-  bbox          <- raster::extent(ctry_rst)
+  shp_fl   <- list.files(paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/shps/',country), pattern = 'adm0.shp', full.names = T)
+  ctry_shp <- raster::shapefile(shp_fl)
+  ref      <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
+  ref      <- raster::crop(x=ref,y=raster::extent(ctry_shp))
+  ctry_rst <- raster::rasterize(x=ctry_shp,y=ref)
+  bbox     <- raster::extent(ctry_rst)
   
   ## Loop through list of GCMs
   for(gcm in gcmList)
@@ -139,12 +139,12 @@ gcmDailyFutureProcess <- function(country = 'Pakistan',
   names(mthMat) <- c("Mth", "MthMod", "Ndays")
   
   # Extent of country raster
-  all_countries <- getData("ISO3") %>% tibble::as.tibble() %>% dplyr::filter(NAME %in% country)
-  ctry_shp      <- lapply(all_countries$NAME, function(x) getData('GADM', country=x, level=0))
-  ref           <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
-  ref           <- raster::crop(x=ref,y=raster::extent(ctry_shp[[1]]))
-  ctry_rst      <- raster::rasterize(x=ctry_shp[[1]],y=ref)
-  bbox          <- raster::extent(ctry_rst)
+  shp_fl   <- list.files(paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/shps/',country), pattern = 'adm0.shp', full.names = T)
+  ctry_shp <- raster::shapefile(shp_fl)
+  ref      <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
+  ref      <- raster::crop(x=ref,y=raster::extent(ctry_shp))
+  ctry_rst <- raster::rasterize(x=ctry_shp,y=ref)
+  bbox     <- raster::extent(ctry_rst)
   
   ## Loop through list of GCMs
   for(gcm in gcmList)
@@ -250,14 +250,14 @@ gcmDailyResample <- function(country = 'Pakistan',
   names(mthMat) <- c("Mth", "MthMod", "Ndays")
   
   # Extent of country raster
-  all_countries <- getData("ISO3") %>% tibble::as.tibble() %>% dplyr::filter(NAME %in% country)
-  ctry_shp      <- lapply(all_countries$NAME, function(x) getData('GADM', country=x, level=0))
-  ref           <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
-  ref           <- raster::crop(x=ref,y=raster::extent(ctry_shp[[1]]))
-  ctry_rst      <- raster::rasterize(x=ctry_shp[[1]],y=ref)
-  bbox          <- raster::extent(ctry_rst)
-  rows          <- nrow(ctry_rst)
-  cols          <- ncol(ctry_rst)
+  shp_fl   <- list.files(paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/shps/',country), pattern = 'adm0.shp', full.names = T)
+  ctry_shp <- raster::shapefile(shp_fl)
+  ref      <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
+  ref      <- raster::crop(x=ref,y=raster::extent(ctry_shp))
+  ctry_rst <- raster::rasterize(x=ctry_shp,y=ref)
+  bbox     <- raster::extent(ctry_rst)
+  rows     <- nrow(ctry_rst)
+  cols     <- ncol(ctry_rst)
   
   ## Reggrid GCM Historical
   for(gcm in gcmList){
@@ -378,14 +378,14 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
   names(mthMat) <- c("Mth", "MthMod", "Ndays")
   
   # Extent of country raster
-  all_countries <- getData("ISO3") %>% tibble::as.tibble() %>% dplyr::filter(NAME %in% country)
-  ctry_shp      <- lapply(all_countries$NAME, function(x) getData('GADM', country=x, level=0))
-  ref           <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
-  ref           <- raster::crop(x=ref,y=raster::extent(ctry_shp[[1]]))
-  ctry_rst      <- raster::rasterize(x=ctry_shp[[1]],y=ref)
-  bbox          <- raster::extent(ctry_rst)
-  rows          <- nrow(ctry_rst)
-  cols          <- ncol(ctry_rst)
+  shp_fl   <- list.files(paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/shps/',country), pattern = 'adm0.shp', full.names = T)
+  ctry_shp <- raster::shapefile(shp_fl)
+  ref      <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
+  ref      <- raster::crop(x=ref,y=raster::extent(ctry_shp))
+  ctry_rst <- raster::rasterize(x=ctry_shp,y=ref)
+  bbox     <- raster::extent(ctry_rst)
+  rows     <- nrow(ctry_rst)
+  cols     <- ncol(ctry_rst)
   
   ## Reggrid GCM future data
   for(gcm in gcmList){
@@ -482,31 +482,23 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
 
 ## Runs
 # cntry <- 'Pakistan'
-cntry   <- 'Mali' # Ethiopia, Benin, Nigeria, Burkina-Faso, Cameroon
-gcmList <- c("bnu_esm","cccma_canesm2","cmcc_cms","gfdl_esm2g")
-# gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m","bnu_esm","cccma_canesm2","cmcc_cms","gfdl_esm2g")
-cat('>>> Clip rasters: present and future\n')
-gcmDailyProcess(country = cntry, gcmList)
+cntry      <- 'Ghana' # Ethiopia, Benin, Nigeria, Burkina-Faso, Cameroon
+gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 periodList <- c("2021_2045", "2041_2065")
 rcpList    <- paste("rcp", 85, sep="")
+# gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m","bnu_esm","cccma_canesm2","cmcc_cms","gfdl_esm2g")
+cat('>>> Clip and downscale rasters: present\n')
+gcmDailyProcess(country = cntry, gcmList = gcmList)
+gcmDailyResample(country = cntry, gcmList = gcmList)
+cat('>>> Clip and downscale rasters: future\n')
 lapply(1:length(periodList), function(i){
   cat('Processing period:', periodList[[i]],'\n')
   library(parallel)
   mclapply(1:length(rcpList), function(j){
     cat('Processing RCP:', rcpList[[j]],'\n')
-    gcmDailyFutureProcess(country = cntry, gcmList, rcp=rcpList[[j]], period=periodList[[i]])
+    gcmDailyFutureProcess(country = cntry, gcmList = gcmList, rcp=rcpList[[j]], period=periodList[[i]])
+    gcmDailyFutureResample(country = cntry, gcmList = gcmList, rcp=rcpList[[j]], period=periodList[[i]])
     return(cat('Process done for RCP:', rcpList[[j]],'\n'))
   }, mc.cores=1)
-  return(cat('Process done for period:', periodList[[i]],'\n'))
-})
-cat('>>> Downscaling rasters: present and future\n')
-gcmDailyResample(country = cntry, gcmList)
-lapply(1:length(periodList), function(i){
-  cat('Processing period:', periodList[[i]],'\n')
-  lapply(1:length(rcpList), function(j){
-    cat('Processing RCP:', rcpList[[j]],'\n')
-    gcmDailyFutureResample(country = cntry, gcmList, rcp=rcpList[[j]], period=periodList[[i]])
-    return(cat('Process done for RCP:', rcpList[[j]],'\n'))
-  })
   return(cat('Process done for period:', periodList[[i]],'\n'))
 })

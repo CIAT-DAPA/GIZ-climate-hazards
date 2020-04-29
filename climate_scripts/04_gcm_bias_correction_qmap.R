@@ -101,7 +101,7 @@ BC_Qmap <- function(country   = "Ethiopia",
   cat(paste0('>>> Loading future GCM data\n'))
   futGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/",period)
   fut_gcm <<- fst::read_fst(paste0(futGCMDir,'/',tolower(county),'.fst'))
-  fut_gcm <<- his_gcm %>%
+  fut_gcm <<- fut_gcm %>%
     tidyr::nest(Climate = c('id','Date','prec','tmax','tmin','srad')) %>%
     dplyr::rename(id = 'id1') %>%
     dplyr::select(id, everything(.))
@@ -152,9 +152,10 @@ BC_Qmap <- function(country   = "Ethiopia",
 # Run once
 periodList <- c('2021_2045','2041_2065')
 rcpList    <- 'rcp85'
-gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m","bnu_esm","cccma_canesm2","cmcc_cms","gfdl_esm2g")
+# gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m","bnu_esm","cccma_canesm2","cmcc_cms","gfdl_esm2g")
+gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 for(p in periodList){
   for(gcm in gcmList){
-    BC_Qmap(country='Pakistan',county='Dadu',rcp='rcp85',gcm=gcm,period=p)
+    BC_Qmap(country='Mali',county='Koulikoro',rcp='rcp85',gcm=gcm,period=p)
   }
 }
