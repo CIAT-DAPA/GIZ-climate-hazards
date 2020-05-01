@@ -23,7 +23,8 @@ BC_Qmap <- function(country   = "Ethiopia",
                     county    = "Arsi",
                     rcp       = "rcp85",
                     gcm       = "ipsl_cm5a_mr",
-                    period    = "2021_2045")
+                    period    = "2021_2045",
+                    ncores    = 10)
 {
   
   bc_qmap <<- function(df_obs, df_his_gcm, df_fut_gcm){
@@ -109,7 +110,7 @@ BC_Qmap <- function(country   = "Ethiopia",
   his_gcm_bc <<- his_gcm
   fut_gcm_bc <<- fut_gcm
   
-  cl <- createCluster(30, export = list("root","obsDir","his_obs","hisGCMDir","his_gcm","futGCMDir","fut_gcm","bc_qmap","his_gcm_bc","fut_gcm_bc"), lib = list("tidyverse","raster","qmap"))
+  cl <- createCluster(ncores, export = list("root","obsDir","his_obs","hisGCMDir","his_gcm","futGCMDir","fut_gcm","bc_qmap","his_gcm_bc","fut_gcm_bc"), lib = list("tidyverse","raster","qmap"))
   
   bc_data <- 1:nrow(his_obs) %>% parallel::parLapply(cl, ., function(i){
     bc_data <<- bc_qmap(df_obs    = his_obs$Climate[[i]],
@@ -156,6 +157,6 @@ rcpList    <- 'rcp85'
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 for(p in periodList){
   for(gcm in gcmList){
-    BC_Qmap(country='Mali',county='Koulikoro',rcp='rcp85',gcm=gcm,period=p)
+    BC_Qmap(country='Mali',county='Segou',rcp='rcp85',gcm=gcm,period=p,ncores=10)
   }
 }

@@ -111,19 +111,19 @@ do_climatology <- function(country, county){
     ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology_gSeasons.png'), plot = gg, device = "png", width = 12, height = 6, units = "in")
   
 }
-do_climatology(country = 'Pakistan', county = 'Kurram')
-counties <- c("Muzaffargarh",
-              "Rajan Pur",
-              "Jhang",
-              "Ghotki",
-              "Kashmore",
-              "Dadu",
-              "Mithi",
-              "Chitral",
-              "Dera Ismail Khan",
-              "South Waziristan",
-              "North Waziristan",
-              "Orakzai","Kurram")
-for(cnt in counties){
-  do_climatology(country = 'Pakistan', county = cnt)
-}
+# do_climatology(country = 'Pakistan', county = 'Kurram')
+# counties <- c("Muzaffargarh",
+#               "Rajan Pur",
+#               "Jhang",
+#               "Ghotki",
+#               "Kashmore",
+#               "Dadu",
+#               "Mithi",
+#               "Chitral",
+#               "Dera Ismail Khan",
+#               "South Waziristan",
+#               "North Waziristan",
+#               "Orakzai","Kurram")
+# for(cnt in counties){
+do_climatology(country = 'Pakistan', county = cnt)
+# }

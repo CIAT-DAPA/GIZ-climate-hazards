@@ -482,7 +482,7 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
 
 ## Runs
 # cntry <- 'Pakistan'
-cntry      <- 'Ghana' # Ethiopia, Benin, Nigeria, Burkina-Faso, Cameroon
+cntry      <- 'Tunisia' # Ethiopia, Benin, Nigeria, Burkina-Faso, Cameroon
 gcmList    <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 periodList <- c("2021_2045", "2041_2065")
 rcpList    <- paste("rcp", 85, sep="")
