@@ -10,8 +10,8 @@ Spatial resolution: 5 km
 ### Running order
 
 * **00_obtain_soil_capacity.R**: calculate soil capacity for all countries at pixel level. Just need to be run once
-* **01_gcm_resampling_windows.R**: process GCM data (historic and future) at country level: clip to country extent and do resampling to 5 km. Just need to be run once per country. This script can be run for several countries at the time
-* **02_loading_obs_climate.R**: prepare observational data (historic information of: tmax, tmin, prec, and srad) at county level in the required format to calculate agro-climatic indices. This script can be run for several counties at the time
+* **01_gcm_data_processing.R**: process GCM data (historic and future) at country level: clip to country extent and then resampling to 5 km. Just need to be run once per country. This script can be run for several countries at the time
+* **02_loading_obs_climate.R**: prepare observational data (historical information of: tmax, tmin, prec, and srad) at county level in the required format to calculate agro-climatic indices. This script can be run for several counties at the time
 * **03_loading_gcm_climate.R**: prepare GCM data at county level in the required format to calculate agro-climatic indices. This script can be run for several countries at the time
 * **04_gcm_bias_correction_qmap.R**: develop bias correction by mean of quantile mapping at county level for GCM data. This script must be run for one county at the time
 * **05_calc_indices.R**: calculate partial agro-climatic indices. Those indices do not require solar radiation and soil data
