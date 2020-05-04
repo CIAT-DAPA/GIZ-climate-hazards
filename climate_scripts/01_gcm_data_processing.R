@@ -275,8 +275,8 @@ gcmDailyResample <- function(country = 'Pakistan',
   ref      <- raster::crop(x=ref,y=raster::extent(ctry_shp))
   ctry_rst <- raster::rasterize(x=ctry_shp,y=ref)
   bbox     <- raster::extent(ctry_rst)
-  rows     <<- nrow(ctry_rst)
-  cols     <<- ncol(ctry_rst)
+  rows     <- nrow(ctry_rst)
+  cols     <- ncol(ctry_rst)
   
   # Create parallelization cluster
   cl <- createCluster(ncores, export = list("rows","cols","bbox","mthMat","ndays","mthListMod","metList","mthList","varlist","inYr","endYr","cdo_path","diroutcut","dirout","country","gcmList"), lib = list("tidyverse","raster","ncdf4","rgdal"))
@@ -415,8 +415,8 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
   ref      <- raster::crop(x=ref,y=raster::extent(ctry_shp))
   ctry_rst <- raster::rasterize(x=ctry_shp,y=ref)
   bbox     <- raster::extent(ctry_rst)
-  rows     <<- nrow(ctry_rst)
-  cols     <<- ncol(ctry_rst)
+  rows     <- nrow(ctry_rst)
+  cols     <- ncol(ctry_rst)
   
   # Create parallelization cluster
   cl <- createCluster(ncores, export = list("rows","cols","bbox","mthMat","ndays","mthListMod","metList","mthList","varlist","inYr","endYr","cdo_path","diroutcut","dirout","country","period","rcp","gcmList"), lib = list("tidyverse","raster","ncdf4","rgdal"))
