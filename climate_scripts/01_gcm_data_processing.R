@@ -7,6 +7,13 @@ options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, ncdf4, rgdal))
 
+allglobal <- function() {
+  lss <- ls(envir = parent.frame())
+  for (i in lss) {
+    assign(i, get(i, envir = parent.frame()), envir = .GlobalEnv)
+  }
+}
+
 ### 1.1 Clip GCM historical daily data to country extent
 gcmDailyProcess <- function(country = 'Pakistan',
                             gcmList = gcmList,
@@ -278,6 +285,8 @@ gcmDailyResample <- function(country = 'Pakistan',
   rows     <- nrow(ctry_rst)
   cols     <- ncol(ctry_rst)
   
+  allglobal()
+  
   # Create parallelization cluster
   cl <- createCluster(ncores, export = list("rows","cols","bbox","mthMat","ndays","mthListMod","metList","mthList","varlist","inYr","endYr","cdo_path","diroutcut","dirout","country","gcmList"), lib = list("tidyverse","raster","ncdf4","rgdal"))
   
@@ -418,6 +427,8 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
   rows     <- nrow(ctry_rst)
   cols     <- ncol(ctry_rst)
   
+  allglobal()
+  
   # Create parallelization cluster
   cl <- createCluster(ncores, export = list("rows","cols","bbox","mthMat","ndays","mthListMod","metList","mthList","varlist","inYr","endYr","cdo_path","diroutcut","dirout","country","period","rcp","gcmList"), lib = list("tidyverse","raster","ncdf4","rgdal"))
   
@@ -520,7 +531,7 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
 
 # Explanation about how to run this script
 ## 1. Write country name
-cntry <- 'Tunisia'
+cntry <- 'Kenya'
 ## 2. Write GCM list
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 ## 3. Define period list
