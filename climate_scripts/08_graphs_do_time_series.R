@@ -1,15 +1,15 @@
 library(tidyverse)
 library(fst)
 
-country <- 'Pakistan' # Ethiopia
-county  <- 'Kurram' # Arsi
+country <- 'Benin' # Ethiopia
+county  <- 'Alibori' # Arsi
 
-past    <- fst(paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/",country,"/past/",county,"_1985_2015.fst")) %>% data.frame
+past    <- fst::fst(paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/",country,"/past/",county,"_1985_2015.fst")) %>% data.frame
 futDir  <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/future')
 fut_fls <- list.files(futDir, pattern = paste0('^',county,'_[0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9].fst'), recursive = T)
 fut_fls <- paste0(futDir,'/',fut_fls)
 future  <- fut_fls %>%
-  purrr::map(.f = function(x){df <- fst(x) %>% data.frame; return(df)}) %>%
+  purrr::map(.f = function(x){df <- fst::fst(x) %>% data.frame; return(df)}) %>%
   do.call(rbind, .)
 
 df  <- rbind(past, future)

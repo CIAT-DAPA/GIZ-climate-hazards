@@ -1,15 +1,38 @@
-library(tidyverse)
-library(lubridate)
-source("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/scripts/indices.R")
+### Do climathology graph v2
+### A. Esquivel, H. Achicanoy
+### CIAT, 2020
+
+# R options
+options(warn = -1, scipen = 999)
+
+# Load libraries
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse, lubridate, fst))
+
+# Paths
+OSys <- Sys.info()[1]
+root <<- switch(OSys,
+                'Linux'   = '/home/jovyan/work/cglabs',
+                'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
+
+source(paste0(root, "/scripts/indices.R"))
 
 do_climatology <- function(country, county, seasons = 2){
   
-  input1 <- paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/observational_data/",tolower(country),"/",tolower(county),".RDS")
-  input2 <- paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/data/observational_data/",tolower(country),"/",tolower(county),"_prec_temp.RDS")
+  input1 <- paste0(root, "/data/observational_data/",tolower(country),"/",tolower(county),".fst")
+  input2 <- paste0(root, "/data/observational_data/",tolower(country),"/",tolower(county),"_prec_temp.fst")
   if(!file.exists(input1)){
-    site <- readRDS(input2)
+    site <- fst::read_fst(input2)
+    site <- site %>%
+      tidyr::nest(Climate = c('id','Date','prec','tmax','tmin')) %>%
+      dplyr::rename(id = 'id1') %>%
+      dplyr::select(id, everything(.))
   } else {
-    site <- readRDS(input1)
+    site <- fst::read_fst(input1)
+    site <- site %>%
+      tidyr::nest(Climate = c('id','Date','prec','tmax','tmin','srad')) %>%
+      dplyr::rename(id = 'id1') %>%
+      dplyr::select(id, everything(.))
   }
   if(nrow(site) > 100){
     set.seed(1235)
@@ -46,7 +69,7 @@ do_climatology <- function(country, county, seasons = 2){
   rlc <- mean(avrgs$Prec) / mean(avrgs$Tmax) * 2
   cols <- c("Tmin" = "blue", "Tmax" = "red")
   
-  outDir <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/')
+  outDir <- paste0(root,'/results/',country,'/graphs/',tolower(county),'/')
   if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
   
   if(seasons == 1){
@@ -147,7 +170,7 @@ do_climatology <- function(country, county, seasons = 2){
         ggplot2::annotate("rect", xmin=tbl_summary$sMnth[i], xmax=tbl_summary$eMnth[i], ymin=-Inf, ymax=Inf, alpha=.3, fill="forestgreen")
     }
   }
-  ggplot2::ggsave(filename = paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology.png'), plot = gg, device = "png", width = 12, height = 6, units = "in")
+  ggplot2::ggsave(filename = paste0(root,'/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology.png'), plot = gg, device = "png", width = 12, height = 6, units = "in")
   
 }
 # do_climatology(country = 'Pakistan', county = 'Kurram', seasons = 2)
