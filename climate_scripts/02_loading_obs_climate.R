@@ -121,4 +121,4 @@ get_observational_data <- function(country = 'Pakistan',
   
 }
 # Run twice
-for(i in 1:2){get_observational_data(country='Burkina_Faso',county='Haut-Bassins',iso3='BFA',adm_lvl=1)}
+for(i in 1:2){get_observational_data(country='Ivory_Coast',county='Comoe',iso3='CIV',adm_lvl=1)}
