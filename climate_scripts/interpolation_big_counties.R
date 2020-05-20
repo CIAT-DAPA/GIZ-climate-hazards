@@ -144,11 +144,11 @@ interpolation_strtg <- function(country = 'Mali',
   
 }
 
-counties <- c('Nord-Ouest','Ouest','Adamaoua','Sud-Ouest')
+counties <- c('Central Region')
 for(cnty in counties){
-  interpolation_strtg(country = 'Cameroon',
+  interpolation_strtg(country = 'Malawi',
                       county  = cnty,
-                      iso3c   = 'CMR',
+                      iso3c   = 'MWI',
                       gcm     = NULL,
                       period  = '1985_2015',
                       time    = 'past')
@@ -158,9 +158,9 @@ gcmList <- c('ipsl_cm5a_mr','miroc_esm_chem','ncc_noresm1_m')
 for(cnty in counties){
   for(p in periods){
     for(g in gcmList){
-      interpolation_strtg(country = 'Cameroon',
+      interpolation_strtg(country = 'Malawi',
                           county  = cnty,
-                          iso3c   = 'CMR',
+                          iso3c   = 'MWI',
                           gcm     = g,
                           period  = p,
                           time    = 'future')
