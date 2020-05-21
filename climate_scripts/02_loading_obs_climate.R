@@ -50,7 +50,11 @@ get_observational_data <- function(country = 'Pakistan',
     
     cat(paste0('Precipitation and temperature data file does not exists for county: ',county,'. Creating it ...\n'))
     
-    ts <- list.files(path=paste0(root,'/data/Chirps_Chirts'),full.names=F,pattern='*.fst$') %>% sort()
+    if(country %in% c('Ivory_Coast','Ghana')){
+      ts <- list.files(path=paste0(root,'/data/Climate_other_C'),full.names=F,pattern='*.fst$') %>% sort()
+    } else {
+      ts <- list.files(path=paste0(root,'/data/Chirps_Chirts'),full.names=F,pattern='*.fst$') %>% sort()
+    }
     cl <- createCluster(30, export = list("ts","root","crd"), lib = list("tidyverse","fst"))
     
     cat('>>> Loading and organizing time series\n')
@@ -121,4 +125,4 @@ get_observational_data <- function(country = 'Pakistan',
   
 }
 # Run twice
-for(i in 1:2){get_observational_data(country='India',county='Himachal Pradesh',iso3='IND',adm_lvl=1)}
+for(i in 1:2){get_observational_data(country='Ivory_Coast',county='Bas-Sassandra',iso3='CIV',adm_lvl=1)}

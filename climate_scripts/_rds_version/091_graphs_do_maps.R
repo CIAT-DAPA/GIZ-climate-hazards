@@ -39,7 +39,10 @@ for(i in 1:length(count_i)){
   # =--------------------
   
   # Ruta Principal para guardados: 
-  root <- '//dapadfs/workspace_cluster_8/climateriskprofiles/'
+  OSys <- Sys.info()[1]
+  root <<- switch(OSys,
+                  'Linux'   = '/home/jovyan/work/cglabs',
+                  'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
   
   # Load county shapefile
   country1 <- raster::shapefile(paste0(root,'/data/shps/',country,'/',iso3c,'_adm',adm_lvl,'.shp'))

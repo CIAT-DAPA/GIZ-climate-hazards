@@ -194,23 +194,40 @@ calc_indices <- function(country = 'Pakistan',
   
 }
 
-calc_indices(country = 'Pakistan',
-             county  = 'Mithi',
-             iso3c   = 'PAK',
-             adm_lvl = 3,
-             gcm     = NULL,
-             period  = '1985_2015',
-             time    = 'past')
+countyList <- c('Muzaffargarh',
+                'Rajan Pur',
+                'Jhang',
+                'Ghotki',
+                'Kashmore',
+                'Dadu',
+                'Chitral',
+                'Dera Ismail Khan',
+                'South Waziristan',
+                'North Waziristan',
+                'Orakzai',
+                'Kurram')
+for(i in 1:length(countyList)){
+  calc_indices(country = 'Pakistan',
+               county  = countyList[i],
+               iso3c   = 'PAK',
+               adm_lvl = 3,
+               gcm     = NULL,
+               period  = '1985_2015',
+               time    = 'past')
+}
+
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 periodList <- c('2021_2045','2041_2065')
-for(gcm in gcmList){
-  for(period in periodList){
-    calc_indices(country = 'Pakistan',
-                 county  = 'Mithi',
-                 iso3c   = 'PAK',
-                 adm_lvl = 3,
-                 gcm     = gcm,
-                 period  = period,
-                 time    = 'future')
+for(i in 1:length(countyList)){
+  for(gcm in gcmList){
+    for(period in periodList){
+      calc_indices(country = 'Pakistan',
+                   county  = countyList[i],
+                   iso3c   = 'PAK',
+                   adm_lvl = 3,
+                   gcm     = gcm,
+                   period  = period,
+                   time    = 'future')
+    }
   }
 }

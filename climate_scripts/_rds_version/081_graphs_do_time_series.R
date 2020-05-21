@@ -4,8 +4,13 @@ library(fst)
 country <- 'Pakistan'
 county  <- 'Mithi'
 
-past    <- fst::fst(paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/",country,"/past/",county,"_1985_2015_all_new.fst")) %>% data.frame
-futDir  <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/future')
+OSys <- Sys.info()[1]
+root <<- switch(OSys,
+                'Linux'   = '/home/jovyan/work/cglabs',
+                'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
+
+past    <- fst::fst(paste0(root,"/results/",country,"/past/",county,"_1985_2015_all_new.fst")) %>% data.frame
+futDir  <- paste0(root,'/results/',country,'/future')
 fut_fls <- list.files(futDir, pattern = paste0('^',county,'_[0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9]_all_new.fst'), recursive = T)
 fut_fls <- paste0(futDir,'/',fut_fls)
 future  <- fut_fls %>%
@@ -20,7 +25,7 @@ df1_ <- df %>%
   dplyr::group_split(Indices)
 
 # Output folder
-outDir <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/graphs/',tolower(county),'/time_series')
+outDir <- paste0(root,'/results/',country,'/graphs/',tolower(county),'/time_series')
 if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
 
 df1_ %>%
