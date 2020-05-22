@@ -12,10 +12,10 @@ root <<- switch(OSys,
                 'Linux'   = '/home/jovyan/work/cglabs',
                 'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
 
-calc_indices <- function(country = 'Ethiopia',
-                         county  = 'Arsi',
-                         iso3c   = 'ETH',
-                         adm_lvl = 2,
+calc_indices <- function(country = 'Malawi',
+                         county  = 'Central Region',
+                         iso3c   = 'MWI',
+                         adm_lvl = 1,
                          seasons = 1,
                          gcm     = 'ipsl_cm5a_mr',
                          period  = '2041_2065',
@@ -94,7 +94,7 @@ calc_indices <- function(country = 'Ethiopia',
         tibble(CDD = calc_cddCMP(y$prec[x[[2]]]), 
                P5D = calc_p5dCMP(y$prec[x[[2]]]), 
                P95 = calc_p95CMP(y$prec[x[[2]]]), 
-               NT35 = calc_htsCMP(y$prec[x[[2]]], t_thresh = 35))
+               NT35 = calc_htsCMP(y$tmax[x[[2]]], t_thresh = 35))
       })) %>% unnest(index)
     
     
@@ -205,22 +205,23 @@ calc_indices <- function(country = 'Ethiopia',
   }
   
 }
-calc_indices(country = 'Pakistan',
-             county  = 'Kashmore',
-             iso3c   = 'PAK',
-             adm_lvl = 3,
-             seasons = 2,
+calc_indices(country = 'Malawi',
+             county  = 'Central Region',
+             iso3c   = 'MWI',
+             adm_lvl = 1,
+             seasons = 1,
              gcm     = NULL,
              period  = '1985_2015',
              time    = 'past')
-gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m","bnu_esm","cccma_canesm2","cmcc_cms","gfdl_esm2g") 
+gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
+periodList <- c('2021_2045','2041_2065')
 for(gcm in gcmList){
   for(period in periodList){
-    calc_indices(country = 'Pakistan',
-                 county  = 'Kashmore',
-                 iso3c   = 'PAK',
-                 adm_lvl = 3,
-                 seasons = 2,
+    calc_indices(country = 'Malawi',
+                 county  = 'Central Region',
+                 iso3c   = 'MWI',
+                 adm_lvl = 1,
+                 seasons = 1,
                  gcm     = gcm,
                  period  = period,
                  time    = 'future')
