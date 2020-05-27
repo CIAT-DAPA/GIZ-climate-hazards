@@ -96,4 +96,8 @@ do_climatology <- function(country, county){
   
 }
 
-do_climatology(country = 'Pakistan', county = 'Mithi')
+cntList <- c('Chitral','Dadu','Dera Ismail Khan','Ghotki','Jhang','Kashmore','Kurram','Muzaffargarh','North Waziristan','Orakzai','Rajan Pur','South Waziristan')
+for(cnt in cntList){
+  do_climatology(country = 'Pakistan', county = cnt)
+}
+

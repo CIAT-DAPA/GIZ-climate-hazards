@@ -205,9 +205,9 @@ calc_indices <- function(country = 'Malawi',
   }
   
 }
-calc_indices(country = 'Malawi',
-             county  = 'Central Region',
-             iso3c   = 'MWI',
+calc_indices(country = 'Ivory_Coast',
+             county  = 'Comoe',
+             iso3c   = 'CIV',
              adm_lvl = 1,
              seasons = 1,
              gcm     = NULL,
@@ -217,9 +217,9 @@ gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 periodList <- c('2021_2045','2041_2065')
 for(gcm in gcmList){
   for(period in periodList){
-    calc_indices(country = 'Malawi',
-                 county  = 'Central Region',
-                 iso3c   = 'MWI',
+    calc_indices(country = 'Ivory_Coast',
+                 county  = 'Comoe',
+                 iso3c   = 'CIV',
                  adm_lvl = 1,
                  seasons = 1,
                  gcm     = gcm,

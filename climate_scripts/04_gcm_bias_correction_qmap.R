@@ -89,7 +89,28 @@ BC_Qmap <- function(country   = "Ethiopia",
       dplyr::rename(id = 'id1') %>%
       dplyr::select(id, everything(.))
   }
+  impute_missings <- function(tbl = clim_data){
+    Climate <- 1:nrow(tbl) %>%
+      purrr::map(.f = function(i){
+        df <- tbl$Climate[[i]]
+        if(sum(is.na(df$tmax)) > 0){
+          df$tmax[which(is.na(df$tmax))] <- median(df$tmax, na.rm = T)
+        }
+        if(sum(is.na(df$tmin)) > 0){
+          df$tmin[which(is.na(df$tmin))] <- median(df$tmin, na.rm = T)
+        }
+        if(sum(is.na(df$srad)) > 0){
+          df$srad[which(is.na(df$srad))] <- median(df$srad, na.rm = T)
+        }
+        if(sum(is.na(df$prec)) > 0){
+          df$prec[which(is.na(df$prec))] <- median(df$prec, na.rm = T)
+        }
+        return(df)
+      })
     
+    return(Climate)
+  }
+  his_obs$Climate <- impute_missings(tbl = his_obs)
   
   cat(paste0('>>> Loading historical GCM data\n'))
   hisGCMDir <<- paste0(root,"/data/gcm_0_05deg_lat_county/",tolower(country),"/",gcm,"/1971_2000")
@@ -157,6 +178,6 @@ rcpList    <- 'rcp85'
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 for(p in periodList){
   for(gcm in gcmList){
-    BC_Qmap(country='India',county='Andhra Pradesh',rcp='rcp85',gcm=gcm,period=p,ncores=10)
+    BC_Qmap(country='Ghana',county='Volta',rcp='rcp85',gcm=gcm,period=p,ncores=10)
   }
 }

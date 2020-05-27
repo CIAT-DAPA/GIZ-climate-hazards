@@ -340,21 +340,22 @@ calc_indices_srad <- function(country = 'Ethiopia',
   return(all_index)
   
 }
-calc_indices_srad(country = 'Pakistan',
-                  county  = 'Muzaffargarh',
-                  iso3c   = 'PAK',
-                  adm_lvl = 3,
-                  seasons = 2,
+calc_indices_srad(country = 'Ivory_Coast',
+                  county  = 'Bas-Sassandra',
+                  iso3c   = 'CIV',
+                  adm_lvl = 1,
+                  seasons = 1,
                   gcm     = NULL,
                   period  = '1985_2015',
                   time    = 'past')
-gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m","bnu_esm","cccma_canesm2","cmcc_cms","gfdl_esm2g")
+gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
+periodList <- c('2021_2045','2041_2065')
 for(gcm in gcmList){
   for(period in periodList){
-    calc_indices_srad(country = 'Ethiopia',
-                      county  = 'Arsi',
-                      iso3c   = 'ETH',
-                      adm_lvl = 2,
+    calc_indices_srad(country = 'Ivory_Coast',
+                      county  = 'Bas-Sassandra',
+                      iso3c   = 'CIV',
+                      adm_lvl = 1,
                       seasons = 1,
                       gcm     = gcm,
                       period  = period,

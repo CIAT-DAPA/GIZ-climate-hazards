@@ -25,7 +25,7 @@ suppressMessages(pacman::p_load(tidyverse, vroom, sp, compiler))
 # Identificacion de pixel para ETH
 # =----------------------------------
 country <- 'Pakistan'
-count_i  <- c('Mithi')
+count_i  <- c('Chitral','Dadu','Dera Ismail Khan','Ghotki','Jhang','Kashmore','Kurram','Muzaffargarh','North Waziristan','Orakzai','Rajan Pur','South Waziristan')
 adm_lvl <- 3
 iso3c <- 'PAK'
 Type <- 'A'

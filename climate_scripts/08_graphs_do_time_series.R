@@ -1,8 +1,8 @@
 library(tidyverse)
 library(fst)
 
-country <- 'Benin' # Ethiopia
-county  <- 'Alibori' # Arsi
+country <- 'Mozambique' # Ethiopia
+county  <- 'Sofala' # Arsi
 
 past    <- fst::fst(paste0("//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/",country,"/past/",county,"_1985_2015.fst")) %>% data.frame
 futDir  <- paste0('//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles/results/',country,'/future')
