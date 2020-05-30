@@ -341,7 +341,7 @@ calc_indices_srad <- function(country = 'Ethiopia',
   
 }
 calc_indices_srad(country = 'Ivory_Coast',
-                  county  = 'Bas-Sassandra',
+                  county  = 'Comoe',
                   iso3c   = 'CIV',
                   adm_lvl = 1,
                   seasons = 1,
@@ -353,7 +353,7 @@ periodList <- c('2021_2045','2041_2065')
 for(gcm in gcmList){
   for(period in periodList){
     calc_indices_srad(country = 'Ivory_Coast',
-                      county  = 'Bas-Sassandra',
+                      county  = 'Comoe',
                       iso3c   = 'CIV',
                       adm_lvl = 1,
                       seasons = 1,
