@@ -330,13 +330,16 @@ periodList <- c('2021_2045','2041_2065')
 for(i in 1:length(countyList)){
   for(gcm in gcmList){
     for(period in periodList){
-      calc_indices(country = 'Pakistan',
+      calc_indices(country = 'Mozambique',
                    county  = countyList[i],
-                   iso3c   = 'PAK',
-                   adm_lvl = 3,
+                   iso3c   = 'MOZ',
+                   adm_lvl = 1,
+                   seasons = list(s1 = c(11:12,1:4)),
                    gcm     = gcm,
                    period  = period,
-                   time    = 'future')
+                   time    = 'future',
+                   big_cnt = TRUE,
+                   ncores  = 10)
     }
   }
 }
