@@ -57,7 +57,7 @@ calc_indices <- function(country = 'Mozambique',
                    no   = paste0(root,'/results/',country,'/',time,'/',gcm,'/',period))
   
   if(big_cnt){
-    out <- paste0(outDir,'/',county,'_',period,'_corrected_big.fst')
+    out <- paste0(outDir,'/',county,'_',period,'_corrected_idw.fst')
   } else {
     out <- paste0(outDir,'/',county,'_',period,'_corrected.fst')
   }
@@ -235,7 +235,7 @@ calc_indices <- function(country = 'Mozambique',
         purrr::map(.f = function(i){
           season = seasons[[i]]
           # Season across two years
-          if(sum(season %in% c(12,1)) > 0){
+          if(sum(diff(season) < 0) > 0){
             pairs     <- NA; for(j in 1:length(years)-1){pairs[j] <- paste0(years[j:(j+1)], collapse = '-')}
             tbl_list  <- lapply(1:(length(years)-1), function(k){
               df <- tbl %>%
@@ -284,7 +284,7 @@ calc_indices <- function(country = 'Mozambique',
       
       all <- dplyr::inner_join(x = indices, y = lgp_year_pixel, by = c('id','year'))
       
-      return(indices)
+      return(all)
       
     }
     plan(cluster, workers = ncores)
@@ -310,19 +310,19 @@ calc_indices <- function(country = 'Mozambique',
   
 }
 
-countyList <- c('Sofala',
-                'Manica')
+countyList <- c('Eastern',
+                'Southern')
 for(i in 1:length(countyList)){
-  calc_indices(country = 'Mozambique',
+  calc_indices(country = 'Zambia',
                county  = countyList[i],
-               iso3c   = 'MOZ',
+               iso3c   = 'ZMB',
                adm_lvl = 1,
                seasons = list(s1 = c(11:12,1:4)),
                gcm     = NULL,
                period  = '1985_2015',
                time    = 'past',
                big_cnt = TRUE,
-               ncores  = 10)
+               ncores  = 20)
 }
 
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
@@ -330,16 +330,16 @@ periodList <- c('2021_2045','2041_2065')
 for(i in 1:length(countyList)){
   for(gcm in gcmList){
     for(period in periodList){
-      calc_indices(country = 'Mozambique',
+      calc_indices(country = 'Zambia',
                    county  = countyList[i],
-                   iso3c   = 'MOZ',
+                   iso3c   = 'ZMB',
                    adm_lvl = 1,
                    seasons = list(s1 = c(11:12,1:4)),
                    gcm     = gcm,
                    period  = period,
                    time    = 'future',
                    big_cnt = TRUE,
-                   ncores  = 10)
+                   ncores  = 20)
     }
   }
 }
