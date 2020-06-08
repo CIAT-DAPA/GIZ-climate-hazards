@@ -273,7 +273,11 @@ calc_indices <- function(country = 'Mozambique',
             })
           idx <- dplyr::bind_rows(idx)
           idx$year <- tbl_list$pairs %>% unique
-          idx$year <- substr(x = idx$year, start = 6, stop = 10) %>% as.numeric
+          if(sum(diff(season) < 0) > 0){
+            idx$year <- substr(x = idx$year, start = 6, stop = 10) %>% as.numeric
+          } else {
+            idx$year <- idx$year %>% as.numeric
+          }
           idx$season <- names(seasons)[i]
           idx$id <- id
           
@@ -282,7 +286,7 @@ calc_indices <- function(country = 'Mozambique',
         })
       indices <- dplyr::bind_rows(indices)
       
-      all <- dplyr::inner_join(x = indices, y = lgp_year_pixel, by = c('id','year'))
+      all <- dplyr::full_join(x = indices, y = lgp_year_pixel, by = c('id','year'))
       
       return(all)
       
