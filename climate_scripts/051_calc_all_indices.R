@@ -228,6 +228,11 @@ calc_indices <- function(country = 'Mozambique',
       if(length(seasons) == 1){
         lgp_year_pixel <- lgp_year_pixel %>%
           dplyr::filter(gSeason == 1)
+      } else {
+        if(length(seasons) == 2){
+          lgp_year_pixel <- lgp_year_pixel %>%
+            dplyr::filter(gSeason %in% 1:2)
+        }
       }
       
       cat(' --- Calculate agro-climatic indices for an specific season\n')
