@@ -199,8 +199,14 @@ interpolation_strtg <- function(country = 'Zambia',
   tbl$SLGP <- round(tbl$SLGP)
   tbl$LGP  <- round(tbl$LGP)
   
-  tbl <- tbl %>%
-    dplyr::arrange(id)
+  tbl <- tbl %>% as_tibble() %>%
+    dplyr::select(  x, y, id, ISO3,  Country, county, season, everything()) %>% 
+    dplyr::arrange(id) %>% 
+    mutate_at(vars(CDD:LGP), ~ifelse(. == 'NaN', mean(., na.rm = TRUE), .) %>% round()) %>% 
+    mutate(ndws = ifelse(ndws == 0, median(ndws), ndws))
+  
+  
+  
   
   if(time == 'past'){
     outFut <- paste0(root,'/results/',country,'/',time,'/',county,'_',period,'_idw.fst')
@@ -220,7 +226,7 @@ interpolation_strtg <- function(country = 'Zambia',
   
 }
 
-counties <- c('Eastern',
+counties <- c('Eastern', 
               'Southern')
 for(cnty in counties){
   interpolation_strtg(country = 'Zambia',

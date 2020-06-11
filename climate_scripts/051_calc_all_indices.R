@@ -319,14 +319,14 @@ calc_indices <- function(country = 'Mozambique',
   
 }
 
-countyList <- c('Eastern',
-                'Southern')
+countyList <- c('Kaduna',
+                'Plateau')
 for(i in 1:length(countyList)){
-  calc_indices(country = 'Zambia',
+  calc_indices(country = 'Nigeria',
                county  = countyList[i],
-               iso3c   = 'ZMB',
+               iso3c   = 'NGA',
                adm_lvl = 1,
-               seasons = list(s1 = c(11:12,1:4)),
+               seasons = list(s1 = 4:10),
                gcm     = NULL,
                period  = '1985_2015',
                time    = 'past',
@@ -339,11 +339,11 @@ periodList <- c('2021_2045','2041_2065')
 for(i in 1:length(countyList)){
   for(gcm in gcmList){
     for(period in periodList){
-      calc_indices(country = 'Zambia',
+      calc_indices(country = 'Nigeria',
                    county  = countyList[i],
-                   iso3c   = 'ZMB',
+                   iso3c   = 'NGA',
                    adm_lvl = 1,
-                   seasons = list(s1 = c(11:12,1:4)),
+                   seasons = list(s1 = 4:10),
                    gcm     = gcm,
                    period  = period,
                    time    = 'future',
