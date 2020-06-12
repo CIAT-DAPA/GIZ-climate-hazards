@@ -133,6 +133,6 @@ do_climatology <- function(country = 'Zambia',
   
 }
 
-do_climatology(country = 'Mozambique',
-               county  = 'Manica',
-               seasons = list(s1 = c(11:12,1:4)))
+do_climatology(country = 'Togo',
+               county  = 'Savanes',
+               seasons = list(s1 = 4:10))
