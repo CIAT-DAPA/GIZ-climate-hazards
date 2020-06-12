@@ -531,7 +531,7 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
 
 # Explanation about how to run this script
 ## 1. Write country name
-cntry <- 'India'
+cntry <- 'Kenya3'
 ## 2. Write GCM list
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 ## 3. Define period list
