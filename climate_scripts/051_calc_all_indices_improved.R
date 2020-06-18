@@ -133,7 +133,7 @@ calc_indices <- function(country = 'Mozambique',
       clim_data <- dplyr::filter(clim_data, id %in% id_sample)
     }
     
-    run_pixel <- function(id = 72516){
+    run_pixel <- function(id = 362540){
       
       cat(' --- Obtain complete time series per pixel\n')
       tbl <- clim_data$Climate[[which(clim_data$id == id)]]
@@ -294,42 +294,63 @@ calc_indices <- function(country = 'Mozambique',
           })
       } else {
         if(!is.null(n_ssns)){
-          indices <- 1:length(n_ssns) %>%
-            purrr::map(.f = function(i){
-              # 1. Split by semester
-              if(n_ssns == 2){
-                tbl_list  <- lapply(1:length(years), function(k){
-                  df <- tbl %>%
-                    dplyr::filter(year %in% years[k])
-                  df$pairs <- years[k]
-                  df <- df %>%
-                    dplyr::filter(year == years[k] & month %in% 1:6)
-                  return(df)
-                })
-                tbl_list <- dplyr::bind_rows(tbl_list)
-              }
-              # 2. Within each semester identify the n-wettest days per pixel
-              ...
-              dplyr::group_by(Year, add = T) %>%
-                dplyr::group_split() %>%
-                purrr::map(., .f = function(tbl){
-                  SummDays <- rsum.lapply(x = tbl$prec, n = 150)
-                  WetDays  <- SummDays[which.max(cumulative.r.sum(SummDays))]
-                  WetDays  <- WetDays %>% purrr::map(2) %>% unlist %>% data.frame()
-                  return(WetDays)
-                }) %>%
-                dplyr::bind_cols()
-              # 3. Calculate the indices for these previously identified days
+          # 1. Split by semester
+          if(n_ssns == 2){
+            tbl_list <- lapply(1:length(years), function(k){
+              df <- tbl %>%
+                dplyr::filter(year %in% years[k])
+              df$pairs <- years[k]
+              df1 <- df %>%
+                dplyr::filter(year == years[k] & month %in% 1:6)
+              df1$season <- 's1'
+              df2 <- df %>%
+                dplyr::filter(year == years[k] & month %in% 7:12)
+              df2$season <- 's2'
+              df <- list(s1 = df1, s2 = df2)
+              return(df)
+            }) %>% purrr::flatten()
+          } else { # Split by year
+            if(n_ssns == 1){
+              tbl_list <- lapply(1:length(years), function(k){
+                df <- tbl %>%
+                  dplyr::filter(year %in% years[k])
+                df$pairs <- years[k]
+                return(df)
+              })
+            }
+          }
+          # 2. Within each semester identify the n-wettest days per pixel
+          wettest_days <- tbl_list %>%
+            purrr::map(., .f = function(tbl){
+              SummDays <- rsum.lapply(x = tbl$prec, n = n_wtts)
+              WetDays  <- SummDays[which.max(cumulative.r.sum(SummDays))]
+              WetDays  <- WetDays %>% purrr::map(2) %>% unlist %>% data.frame()
+              return(WetDays)
             })
+          # 3. Calculate the indices for these previously identified days
+          indices <- 1:length(tbl_list) %>%
+            purrr::map(.f = function(i){
+              df  <- tbl_list[[i]]
+              wt  <- wettest_days[[i]] %>% dplyr::pull(.)
+              idx <- tibble::tibble(year   = df$year %>% unique(),
+                                    season = df$season %>% unique(),
+                                    CDD    = calc_cddCMP(PREC = df$prec[wt]),
+                                    P5D    = calc_p5dCMP(PREC = df$prec[wt]),
+                                    P95    = calc_p95CMP(PREC = df$prec[wt]),
+                                    NT35   = calc_htsCMP(tmax = df$tmax[wt], t_thresh = 35),
+                                    ndws   = calc_wsdays(df$ERATIO[wt], season_ini=1, season_end=length(df$ERATIO), e_thresh=0.5))
+              return(idx)
+            })
+          indices    <- dplyr::bind_rows(indices)
+          indices$id <- id
         }
       }
-      indices <- dplyr::bind_rows(indices)
-      
-      all <- dplyr::full_join(x = indices, y = lgp_year_pixel, by = c('id','year'))
+      all <- dplyr::full_join(x = indices, y = lgp_year_pixel, by = c('id','year')) %>% unique()
       
       return(all)
       
     }
+    
     plan(cluster, workers = ncores)
     index_by_pixel <- clim_data %>%
       dplyr::pull(id) %>% 
