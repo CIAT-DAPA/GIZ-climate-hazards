@@ -292,6 +292,7 @@ calc_indices <- function(country = 'Mozambique',
             return(idx)
             
           })
+        indices    <- dplyr::bind_rows(indices)
       } else {
         if(!is.null(n_ssns)){
           # 1. Split by semester
