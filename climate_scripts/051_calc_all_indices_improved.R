@@ -374,19 +374,54 @@ calc_indices <- function(country = 'Mozambique',
   
 }
 
-countyList <- c('Kaduna',
-                'Plateau')
+# countyList <- c('Kaduna',
+#                 'Plateau')
+# for(i in 1:length(countyList)){
+#   calc_indices(country = 'Nigeria',
+#                county  = countyList[i],
+#                iso3c   = 'NGA',
+#                adm_lvl = 1,
+#                seasons = list(s1 = 4:10),
+#                gcm     = NULL,
+#                period  = '1985_2015',
+#                time    = 'past',
+#                big_cnt = TRUE,
+#                ncores  = 20)
+# }
+# 
+# gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
+# periodList <- c('2021_2045','2041_2065')
+# for(i in 1:length(countyList)){
+#   for(gcm in gcmList){
+#     for(period in periodList){
+#       calc_indices(country = 'Nigeria',
+#                    county  = countyList[i],
+#                    iso3c   = 'NGA',
+#                    adm_lvl = 1,
+#                    seasons = list(s1 = 4:10),
+#                    gcm     = gcm,
+#                    period  = period,
+#                    time    = 'future',
+#                    big_cnt = TRUE,
+#                    ncores  = 20)
+#     }
+#   }
+# }
+
+countyList <- c('Vihiga')
 for(i in 1:length(countyList)){
-  calc_indices(country = 'Nigeria',
+  calc_indices(country = 'Kenya',
                county  = countyList[i],
-               iso3c   = 'NGA',
-               adm_lvl = 1,
-               seasons = list(s1 = 4:10),
+               iso3c   = 'KEN',
+               adm_lvl = 2,
+               seasons = NULL, # Seasons manually defined
+               n_ssns  = 2,    # 2-seasons automatically defined
+               n_wtts  = 100,  # 100-wettest days
                gcm     = NULL,
                period  = '1985_2015',
                time    = 'past',
-               big_cnt = TRUE,
-               ncores  = 20)
+               big_cnt = FALSE,
+               ncores  = 10)
 }
 
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
@@ -394,16 +429,18 @@ periodList <- c('2021_2045','2041_2065')
 for(i in 1:length(countyList)){
   for(gcm in gcmList){
     for(period in periodList){
-      calc_indices(country = 'Nigeria',
+      calc_indices(country = 'Kenya',
                    county  = countyList[i],
-                   iso3c   = 'NGA',
-                   adm_lvl = 1,
-                   seasons = list(s1 = 4:10),
+                   iso3c   = 'KEN',
+                   adm_lvl = 2,
+                   seasons = NULL, # Seasons manually defined
+                   n_ssns  = 2,    # 2-seasons automatically defined
+                   n_wtts  = 100,  # 100-wettest days
                    gcm     = gcm,
                    period  = period,
                    time    = 'future',
-                   big_cnt = TRUE,
-                   ncores  = 20)
+                   big_cnt = FALSE,
+                   ncores  = 10)
     }
   }
 }
