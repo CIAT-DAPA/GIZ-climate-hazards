@@ -96,3 +96,13 @@ extract_data <- function(rcp = 45){
 }
 extract_data(rcp = 45)
 extract_data(rcp = 85)
+
+rcp45 <- list.files('D:/JulianCIAT/hazard_inputs/rcp45/', pattern = '.fst', full.names = T)
+tbl <- rcp45 %>% purrr::map(fst::read_fst)
+tbl <- dplyr::bind_rows(tbl)
+fst::write_fst(tbl, 'D:/JulianCIAT/hazard_inputs/tbl_rcp45.fst')
+
+rcp85 <- list.files('D:/JulianCIAT/hazard_inputs/rcp85/', pattern = '.fst', full.names = T)
+tbl <- rcp85 %>% purrr::map(fst::read_fst)
+tbl <- dplyr::bind_rows(tbl)
+fst::write_fst(tbl, 'D:/JulianCIAT/hazard_inputs/tbl_rcp85.fst')
