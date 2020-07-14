@@ -178,6 +178,6 @@ rcpList    <- 'rcp85'
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 for(p in periodList){
   for(gcm in gcmList){
-    BC_Qmap(country='Kenya',county='Vihiga',rcp='rcp85',gcm=gcm,period=p,ncores=10)
+    BC_Qmap(country='Kenya',county='Turkana',rcp='rcp85',gcm=gcm,period=p,ncores=10)
   }
 }

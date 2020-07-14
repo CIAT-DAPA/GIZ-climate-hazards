@@ -329,8 +329,9 @@ gcmDailyResample <- function(country = 'Pakistan',
               
               dList <- c(d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, d21, d22, d23, d24, d25, d26, d27, d28, d29, d30, d31)
               
-              dayNcStack <- stack(dList[1:ndayMth])
-              dayNcStackRes <- resample(dayNcStack, raster(nrows=rows, ncols=cols, xmn=bbox@xmin, xmx=bbox@xmax, ymn=bbox@ymin, ymx=bbox@ymax, resolution=0.05), method='bilinear')
+              dayNcStack <- raster::stack(dList[1:ndayMth])
+              dayNcStack <- raster::rotate(dayNcStack)
+              dayNcStackRes <- raster::resample(dayNcStack, raster(nrows=rows, ncols=cols, xmn=bbox@xmin, xmx=bbox@xmax, ymn=bbox@ymin, ymx=bbox@ymax, resolution=0.05), method='bilinear')
               
               # dayNcStackRes <- resample(dayNcStack, raster(nrows=rows, ncols=cols, xmn=bbox@xmin+360, xmx=bbox@xmax+360, ymn=bbox@ymin, ymx=bbox@ymax, resolution=0.05), method='bilinear')
               # xmin(dayNcStackRes) <- xmin(dayNcStackRes)-360
@@ -481,8 +482,9 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
               
               dList <- c(d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, d21, d22, d23, d24, d25, d26, d27, d28, d29, d30, d31)
               
-              dayNcStack <- stack(dList[1:ndayMth])
-              dayNcStackRes <- resample(dayNcStack, raster(nrows=rows, ncols=cols, xmn=bbox@xmin, xmx=bbox@xmax, ymn=bbox@ymin, ymx=bbox@ymax, resolution=0.05), method='bilinear')
+              dayNcStack <- raster::stack(dList[1:ndayMth])
+              dayNcStack <- raster::rotate(dayNcStack)
+              dayNcStackRes <- raster::resample(dayNcStack, raster(nrows=rows, ncols=cols, xmn=bbox@xmin, xmx=bbox@xmax, ymn=bbox@ymin, ymx=bbox@ymax, resolution=0.05), method='bilinear')
               
               # dayNcStackRes <- resample(dayNcStack, raster(nrows=rows, ncols=cols, xmn=bbox@xmin+360, xmx=bbox@xmax+360, ymn=bbox@ymin, ymx=bbox@ymax, resolution=0.05), method='bilinear')
               # xmin(dayNcStackRes) <- xmin(dayNcStackRes)-360
@@ -531,7 +533,7 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
 
 # Explanation about how to run this script
 ## 1. Write country name
-cntry <- 'Kenya3'
+cntry <- 'Senegal'
 ## 2. Write GCM list
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 ## 3. Define period list

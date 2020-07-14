@@ -409,7 +409,7 @@ calc_indices <- function(country = 'Mozambique',
 #   }
 # }
 
-countyList <- c('Vihiga')
+countyList <- c('Bungoma','Kiambu','Kirinyaga','Kisii','Kitui','Migori','Muranga','Nandi','Narok','Nyamira','Samburu','Trans-Nzoia','Turkana')
 for(i in 1:length(countyList)){
   calc_indices(country = 'Kenya',
                county  = countyList[i],
