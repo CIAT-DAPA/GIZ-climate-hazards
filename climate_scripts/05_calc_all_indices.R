@@ -409,15 +409,15 @@ calc_indices <- function(country = 'Mozambique',
 #   }
 # }
 
-countyList <- c('Bungoma','Kiambu','Kirinyaga','Kisii','Kitui','Migori','Muranga','Nandi','Narok','Nyamira','Samburu','Trans-Nzoia','Turkana')
+countyList <- c('Kaffrine')
 for(i in 1:length(countyList)){
-  calc_indices(country = 'Kenya',
+  calc_indices(country = 'Senegal',
                county  = countyList[i],
-               iso3c   = 'KEN',
-               adm_lvl = 2,
-               seasons = NULL, # Seasons manually defined
-               n_ssns  = 2,    # 2-seasons automatically defined
-               n_wtts  = 100,  # 100-wettest days
+               iso3c   = 'SEN',
+               adm_lvl = 1,
+               seasons = list(s1 = 6:9), # Seasons manually defined
+               n_ssns  = NULL,    # 2-seasons automatically defined
+               n_wtts  = NULL,  # 100-wettest days
                gcm     = NULL,
                period  = '1985_2015',
                time    = 'past',
@@ -430,13 +430,13 @@ periodList <- c('2021_2045','2041_2065')
 for(i in 1:length(countyList)){
   for(gcm in gcmList){
     for(period in periodList){
-      calc_indices(country = 'Kenya',
+      calc_indices(country = 'Senegal',
                    county  = countyList[i],
-                   iso3c   = 'KEN',
-                   adm_lvl = 2,
-                   seasons = NULL, # Seasons manually defined
-                   n_ssns  = 2,    # 2-seasons automatically defined
-                   n_wtts  = 100,  # 100-wettest days
+                   iso3c   = 'SEN',
+                   adm_lvl = 1,
+                   seasons = list(s1 = 6:9), # Seasons manually defined
+                   n_ssns  = NULL,    # 2-seasons automatically defined
+                   n_wtts  = NULL,  # 100-wettest days
                    gcm     = gcm,
                    period  = period,
                    time    = 'future',

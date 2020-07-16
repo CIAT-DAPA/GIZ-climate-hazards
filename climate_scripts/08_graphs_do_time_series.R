@@ -93,7 +93,7 @@ time_series_plot <- function(country = 'Kenya', county = 'Vihiga'){
             #ggplot2::ylim(min(df_summ2$mean)-5, max(df_summ2$mean)+5) +
             ggplot2::geom_line(data = df_summ2 %>% dplyr::filter(Serie == 'Fut'), aes(x = Year, y = mean, colour = season)) +
             ggplot2::geom_ribbon(data = df_summ2 %>% dplyr::filter(Serie == 'Fut'), aes(ymin = CI_lower, ymax = CI_upper, fill = season), color = "grey70", alpha = 0.4) +
-            ggplot2::geom_smooth(data = df_summ2, method = "lm", formula = y ~ poly(x, 3), color = "blue", alpha = 0.8, se = FALSE) +
+            ggplot2::geom_smooth(data = df_summ2, method = "loess", color = "blue", alpha = 0.8, se = FALSE) +
             ggplot2::labs(title    = tbl$Indices %>% unique,
                           subtitle = paste0(country,", ",county),
                           caption  = "Data source: Alliance Bioversity-CIAT") +
@@ -157,7 +157,7 @@ time_series_plot <- function(country = 'Kenya', county = 'Vihiga'){
             #ggplot2::ylim(min(df_summ2$mean)-5, max(df_summ2$mean)+5) +
             ggplot2::geom_line(data = df_summ2 %>% dplyr::filter(Serie == 'Fut'), aes(x = Year, y = mean, colour = gSeason)) +
             ggplot2::geom_ribbon(data = df_summ2 %>% dplyr::filter(Serie == 'Fut'), aes(ymin = CI_lower, ymax = CI_upper, fill = gSeason), color = "grey70", alpha = 0.4) +
-            ggplot2::geom_smooth(data = df_summ2, method = "lm", formula = y ~ poly(x, 3), color = "blue", alpha = 0.8, se = FALSE) +
+            ggplot2::geom_smooth(data = df_summ2, method = "loess", color = "blue", alpha = 0.8, se = FALSE) +
             ggplot2::labs(title    = tbl$Indices %>% unique,
                           subtitle = paste0(country,", ",county),
                           caption  = "Data source: Alliance Bioversity-CIAT") +
