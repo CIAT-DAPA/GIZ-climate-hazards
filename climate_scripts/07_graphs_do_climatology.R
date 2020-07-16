@@ -1,4 +1,4 @@
-### Do climathology graph v1
+### Do climathology graph - improved version
 ### A. Esquivel, H. Achicanoy
 ### CIAT, 2020
 
@@ -15,7 +15,14 @@ root <<- switch(OSys,
                 'Linux'   = '/home/jovyan/work/cglabs',
                 'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
 
-do_climatology <- function(country, county){
+source(paste0(root, "/scripts/indices.R"))
+
+do_climatology <- function(country = 'Kenya',
+                           county  = 'Vihiga',
+                           seasons = TRUE, # Climatology without any season (manual or automatic)
+                           manual  = NULL, # Seasons defined manually e.g. list(s1 = c(11:12,1:4)
+                           auto    = list(n = 2)) # Seasons defined by algorithm/automatically
+{
   
   input1 <- paste0(root, "/data/observational_data/",tolower(country),"/",tolower(county),".fst")
   input2 <- paste0(root, "/data/observational_data/",tolower(country),"/",tolower(county),"_prec_temp.fst")
@@ -67,33 +74,10 @@ do_climatology <- function(country, county){
   rlc <- mean(avrgs$Prec) / mean(avrgs$Tmax) * 2
   cols <- c("Tmin" = "blue", "Tmax" = "red")
   
-  outDir <- paste0(root, '/results/',country,'/graphs/',tolower(county),'/')
+  outDir <- paste0(root,'/results/',country,'/graphs/',tolower(county),'/')
   if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
   
-  indices <- paste0(root, '/results/',country,'/past/',county,'_1985_2015.fst')
-  if(file.exists(indices)){
-    tbl_indices <- fst::read_fst(indices)
-    tbl_summary <- tbl_indices %>%
-      dplyr::select(year,gSeason,SLGP,LGP) %>%
-      tidyr::drop_na() %>%
-      dplyr::group_by(year,gSeason) %>%
-      dplyr::summarise(SLGP_ = mean(SLGP, na.rm = T),
-                       LGP_  = mean(LGP, na.rm = T)) %>%
-      dplyr::filter(gSeason %in% 1:2) %>%
-      dplyr::mutate(SLGP_ = round(SLGP_),
-                    LGP_  = round(LGP_),
-                    ELGP_ = SLGP_ + LGP_,
-                    Start = as.Date(SLGP_, paste0(year,'-01-01')),
-                    End   = as.Date(ELGP_, paste0(year,'-01-01')),
-                    sMnth = lubridate::month(Start),
-                    eMnth = lubridate::month(End)) %>%
-      dplyr::select(year, gSeason, sMnth, eMnth) %>%
-      dplyr::group_by(gSeason) %>%
-      dplyr::summarise(S_month = round(median(sMnth)),
-                       E_month = round(median(eMnth)))
-  }
-  
-  gg <- all_clmtlgy %>%
+  plt <- all_clmtlgy %>%
     dplyr::group_by(Month) %>%
     dplyr::summarise(Prec = mean(Prec, na.rm = T),
                      Tmin = mean(Tmin, na.rm = T),
@@ -102,6 +86,7 @@ do_climatology <- function(country, county){
     ggplot2::geom_bar(stat="identity", fill = 'lightblue') +
     ggplot2::xlab('Month') +
     ggplot2::ylab('Precipitation (mm)') +
+    ggplot2::xlim(0,13)+
     ggplot2::theme_bw() +
     ggplot2::scale_x_continuous(breaks = 1:12) +
     ggplot2::geom_line(aes(x = Month, y = Tmin*rlc, colour = 'blue'), size = 1.2) +
@@ -117,35 +102,149 @@ do_climatology <- function(country, county){
                    legend.position = "top") +
     ggplot2::scale_y_continuous(sec.axis = sec_axis(~./rlc, name = 'Temperature ºC')) +
     ggplot2::scale_colour_discrete(name = "", labels = c("Tmin", "Tmax"))
-  if(exists('tbl_summary')){
-    for(i in 1:nrow(tbl_summary)){
-      if(tbl_summary$S_month[i] == tbl_summary$E_month[i]){
-        gg <- gg +
-          ggplot2::annotate("rect", xmin=tbl_summary$S_month[i]-.5, xmax=tbl_summary$S_month[i]+.5, ymin=-Inf, ymax=Inf, alpha=.3, fill="forestgreen")
+  
+  if(!seasons){
+    
+    cat(paste0('>>> Create climatology graph for: ',county,'-',country,'without seasons\n'))
+    ggplot2::ggsave(filename = paste0(root,'/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology.png'), plot = plt, device = "png", width = 12, height = 6, units = "in")
+    
+  } else {
+    
+    cat(paste0('>>> Create climatology graph for: ',county,'-',country,'with seasons plotted\n'))
+    
+    if(!is.null(auto)){
+      
+      if(auto$n == 1){
+        seasonsInfo <- 1:length(smpl) %>%
+          purrr::map(.f = function(i){
+            info <- site[smpl[i],] %>%
+              dplyr::pull('Climate') %>%
+              .[[1]] %>% 
+              dplyr::mutate(Year  = lubridate::year(lubridate::as_date(Date)),
+                            Month = lubridate::month(lubridate::as_date(Date))) %>%
+              dplyr::group_by(Year, add = T) %>%
+              dplyr::group_split() %>%
+              purrr::map(., .f = function(tbl){
+                SummDays <- rsum.lapply(x = tbl$prec, n = 150)
+                WetDays  <- SummDays[which.max(cumulative.r.sum(SummDays))]
+                WetDays  <- WetDays %>% purrr::map(2) %>% unlist %>% data.frame()
+                return(WetDays)
+              }) %>%
+              dplyr::bind_cols()
+            return(info)
+          }) %>%
+          dplyr::bind_cols()
+        tbl_summary <- data.frame(Season = 1,
+                                  DIni   = round(rowMeans(seasonsInfo, na.rm = T)[1]),
+                                  DEnd   = round(rowMeans(seasonsInfo, na.rm = T)[150])) %>%
+          dplyr::mutate(Start = as.Date(DIni,'2000-01-01'),
+                        End   = as.Date(DEnd,'2000-01-01'),
+                        sMnth = Start %>% ymd() %>% { month(.) + day(.) / days_in_month(.) },
+                        eMnth = End %>% ymd() %>% { month(.) + day(.) / days_in_month(.) })
       } else {
-        if(tbl_summary$S_month[i] < tbl_summary$E_month[i]){
-          gg <- gg +
-            ggplot2::annotate("rect", xmin=tbl_summary$S_month[i]-.5, xmax=tbl_summary$E_month[i]+.5, ymin=-Inf, ymax=Inf, alpha=.3, fill="forestgreen")
+        if(auto$n == 2){
+          seasonsInfo <- 1:length(smpl) %>%
+            purrr::map(.f = function(i){
+              info <- site[smpl[i],] %>%
+                dplyr::pull('Climate') %>%
+                .[[1]] %>% 
+                dplyr::mutate(Year     = lubridate::year(lubridate::as_date(Date)),
+                              Month    = lubridate::month(lubridate::as_date(Date)),
+                              Semester = ifelse(Month %in% 1:6, "1", "2")) %>%
+                dplyr::group_by(Semester, add = T) %>%
+                dplyr::group_split() %>%
+                purrr::map(., .f = function(tbl){
+                  info2 <- tbl %>%
+                    dplyr::group_by(Year, add = T) %>%
+                    dplyr::group_split() %>%
+                    purrr::map(., .f = function(tbl2){
+                      SummDays <- rsum.lapply(x = tbl2$prec, n = 150)
+                      WetDays  <- SummDays[which.max(cumulative.r.sum(SummDays))]
+                      WetDays  <- WetDays %>% purrr::map(2) %>% unlist %>% data.frame()
+                      return(WetDays)
+                    }) %>%
+                    dplyr::bind_cols()
+                })
+              return(info)
+            })
+          seasonsInfo1 <- seasonsInfo %>% purrr::map(1) %>% dplyr::bind_cols()
+          seasonsInfo2 <- seasonsInfo %>% purrr::map(2) %>% dplyr::bind_cols()
+          tbl_summary <- data.frame(Season = c('1','2'),
+                                    DIni   = c(round(rowMeans(seasonsInfo1, na.rm = T)[1]),
+                                               round(rowMeans(seasonsInfo2, na.rm = T)[1])+182),
+                                    DEnd   = c(round(rowMeans(seasonsInfo1, na.rm = T)[150]),
+                                               round(rowMeans(seasonsInfo2, na.rm = T)[150])+182)) %>%
+            dplyr::mutate(Start = as.Date(DIni,'2000-01-01'),
+                          End   = as.Date(DEnd,'2000-01-01'),
+                          sMnth = Start %>% ymd() %>% { month(.) + day(.) / days_in_month(.) },
+                          eMnth = End %>% ymd() %>% { month(.) + day(.) / days_in_month(.) })
+          
+          colors_vct <- c('forestgreen','#b37b53')
+          if(exists('tbl_summary')){
+            for(i in 1:nrow(tbl_summary)){
+              plt <- plt +
+                ggplot2::annotate("rect", xmin=tbl_summary$sMnth[i], xmax=tbl_summary$eMnth[i], ymin=-Inf, ymax=Inf, alpha=.3, fill=colors_vct[i])
+            }
+          }
         }
       }
+      ggplot2::ggsave(filename = paste0(root,'/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology_auto_seasons.png'), plot = plt, device = "png", width = 12, height = 6, units = "in")
+    } else {
+      if(!is.null(manual)){
+        for(i in 1:length(manual)){
+          if(sum(diff(manual[[i]]) < 0) > 0){
+            plt <- plt +
+              ggplot2::annotate("rect",
+                                xmin  = manual[[i]][1]-.5,
+                                xmax  = manual[[i]][which(diff(manual[[i]]) < 0)]+.5,
+                                ymin  = -Inf,
+                                ymax  = Inf,
+                                alpha =.3,
+                                fill  = "forestgreen")
+            plt <- plt +
+              ggplot2::annotate("rect",
+                                xmin  = manual[[i]][which(diff(manual[[i]]) < 0)+1]-.5,
+                                xmax  = manual[[i]][length(manual[[i]])]+.5,
+                                ymin  = -Inf,
+                                ymax  = Inf,
+                                alpha =.3,
+                                fill  = "forestgreen")
+          } else {
+            colors_vct <- c('forestgreen','#b37b53')
+            plt <- plt +
+              ggplot2::annotate("rect",
+                                xmin  = manual[[i]][1]-.5,
+                                xmax  = manual[[i]][length(manual[[i]])]+.5,
+                                ymin  = -Inf,
+                                ymax  = Inf,
+                                alpha =.3,
+                                fill  = colors_vct[i])
+          }
+        }
+      }
+      ggplot2::ggsave(filename = paste0(root,'/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology_manual_seasons.png'), plot = plt, device = "png", width = 12, height = 6, units = "in")
     }
+    
   }
-    ggplot2::ggsave(filename = paste0(root,'/results/',country,'/graphs/',tolower(county),'/',tolower(county),'_climatology_gSeasons.png'), plot = gg, device = "png", width = 12, height = 6, units = "in")
-  
+  return(cat('Climatology graph correctly created\n'))
 }
-# do_climatology(country = 'Pakistan', county = 'Kurram')
-# counties <- c("Muzaffargarh",
-#               "Rajan Pur",
-#               "Jhang",
-#               "Ghotki",
-#               "Kashmore",
-#               "Dadu",
-#               "Mithi",
-#               "Chitral",
-#               "Dera Ismail Khan",
-#               "South Waziristan",
-#               "North Waziristan",
-#               "Orakzai","Kurram")
-# for(cnt in counties){
-do_climatology(country = 'Pakistan', county = cnt)
-# }
+
+## Coding examples
+# No seasons
+do_climatology(country = 'Senegal',
+               county  = 'Kaffrine',
+               seasons = FALSE, # Should be FALSE
+               manual  = NULL,  # Should be NULL
+               auto    = NULL)  # Should be NULL
+# Manual seasons
+do_climatology(country = 'Senegal',
+               county  = 'Kaffrine',
+               seasons = TRUE,           # Should be TRUE
+               manual  = list(s1 = 6:9), # Should be something like e.g. list(s1 = c(11:12,1:4)
+               auto    = NULL)           # Should be NULL
+# Auto seasons
+do_climatology(country = 'Kenya',
+               county  = 'Vihiga',
+               seasons = TRUE,        # Should be TRUE
+               manual  = NULL,        # Should be NULL
+               auto    = list(n = 2)) # Should be something like e.g. list(n = 2)

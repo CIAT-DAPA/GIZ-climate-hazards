@@ -272,7 +272,8 @@ calc_indices <- function(country = 'Jordan',
             idx <- tbl_list %>%
               dplyr::group_split(pairs) %>%
               purrr::map(.f = function(df){
-                idx <- tibble::tibble(CDD  = calc_cddCMP(PREC = df$prec),
+                idx <- tibble::tibble(CDD  = calc_cddCMP(PREC = df$prec, ),
+                                      PCW  = CDD/length(df$prec) * 100,
                                       P5D  = calc_p5dCMP(PREC = df$prec),
                                       P95  = calc_p95CMP(PREC = df$prec),
                                       NT35 = calc_htsCMP(tmax = df$tmax, t_thresh = 35),
