@@ -179,11 +179,13 @@ do_climatology <- function(country = 'Kenya',
                           sMnth = Start %>% ymd() %>% { month(.) + day(.) / days_in_month(.) },
                           eMnth = End %>% ymd() %>% { month(.) + day(.) / days_in_month(.) })
           
-          colors_vct <- c('forestgreen','#b37b53')
+          alphas <- c(.3,.1)
+          seasonL <- c('S:1','S:2')
           if(exists('tbl_summary')){
             for(i in 1:nrow(tbl_summary)){
               plt <- plt +
-                ggplot2::annotate("rect", xmin=tbl_summary$sMnth[i], xmax=tbl_summary$eMnth[i], ymin=-Inf, ymax=Inf, alpha=.3, fill=colors_vct[i])
+                ggplot2::annotate("rect", xmin=tbl_summary$sMnth[i], xmax=tbl_summary$eMnth[i], ymin=-Inf, ymax=Inf, alpha=alphas[i], fill='forestgreen') +
+                ggplot2::annotate("text", x=(tbl_summary$sMnth[i]+tbl_summary$eMnth[i])/2, y = max(avrgs$Prec)+50, label = seasonL[i], size = 10)
             }
           }
         }

@@ -28,6 +28,14 @@ calc_cdd <- function(PREC, p_thresh=1){
 }
 calc_cddCMP <- compiler::cmpfun(calc_cdd)
 
+## CDD. Maximum number of consecutive days with TMAX above t_thresh
+calc_cdd_temp <- function(TMAX, t_thresh=37){
+  runs <- rle(TMAX > t_thresh)
+  cons_days <- max(runs$lengths[runs$values==1], na.rm=TRUE)
+  return(cons_days)
+}
+calc_cdd_tempCMP <- compiler::cmpfun(calc_cdd_temp)
+
 ## P5D. Maximum 5-day running average precipitation
 calc_p5d <- function(PREC){
   runAvg <- caTools::runmean(PREC, k=5, endrule='NA')

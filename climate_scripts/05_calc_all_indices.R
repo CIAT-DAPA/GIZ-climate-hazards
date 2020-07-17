@@ -409,11 +409,11 @@ calc_indices <- function(country = 'Mozambique',
 #   }
 # }
 
-countyList <- c('Kaffrine')
+countyList <- c('Tillaberi')
 for(i in 1:length(countyList)){
-  calc_indices(country = 'Senegal',
+  calc_indices(country = 'Niger',
                county  = countyList[i],
-               iso3c   = 'SEN',
+               iso3c   = 'NER',
                adm_lvl = 1,
                seasons = list(s1 = 6:9), # Seasons manually defined
                n_ssns  = NULL,    # 2-seasons automatically defined
@@ -430,9 +430,9 @@ periodList <- c('2021_2045','2041_2065')
 for(i in 1:length(countyList)){
   for(gcm in gcmList){
     for(period in periodList){
-      calc_indices(country = 'Senegal',
+      calc_indices(country = 'Niger',
                    county  = countyList[i],
-                   iso3c   = 'SEN',
+                   iso3c   = 'NER',
                    adm_lvl = 1,
                    seasons = list(s1 = 6:9), # Seasons manually defined
                    n_ssns  = NULL,    # 2-seasons automatically defined

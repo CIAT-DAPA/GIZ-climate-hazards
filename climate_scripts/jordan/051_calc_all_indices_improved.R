@@ -272,11 +272,11 @@ calc_indices <- function(country = 'Jordan',
             idx <- tbl_list %>%
               dplyr::group_split(pairs) %>%
               purrr::map(.f = function(df){
-                idx <- tibble::tibble(CDD  = calc_cddCMP(PREC = df$prec, ),
-                                      PCW  = CDD/length(df$prec) * 100,
+                idx <- tibble::tibble(CDD  = calc_cddCMP(PREC = df$prec, p_thresh = 2),
+                                      # ALE: Aquí vas a agregar los nuevos,
                                       P5D  = calc_p5dCMP(PREC = df$prec),
                                       P95  = calc_p95CMP(PREC = df$prec),
-                                      NT35 = calc_htsCMP(tmax = df$tmax, t_thresh = 35),
+                                      NT37 = calc_htsCMP(tmax = df$tmax, t_thresh = 37),
                                       ndws = calc_wsdays(df$ERATIO, season_ini=1, season_end=length(df$ERATIO), e_thresh=0.5))
                 return(idx)
               })
@@ -393,8 +393,8 @@ calc_indices(country = 'Jordan',
              county  = 'jordan_rcp85',
              iso3c   = 'JOR',
              adm_lvl = 0,
-             seasons = list(s1 = c(10:12,1:4)), # Seasons manually defined
-             n_ssns  = NULL,    # 2-seasons automatically defined
+             seasons = list(s1 = c(10:12,1:4), s2 = 5:9), # Seasons manually defined
+             n_ssns  = NULL,  # 2-seasons automatically defined
              n_wtts  = NULL,  # 100-wettest days
              gcm     = NULL,
              period  = '1980_2050',
