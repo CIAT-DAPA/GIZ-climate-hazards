@@ -42,14 +42,12 @@ time_series_plot <- function(country = 'Kenya', county = 'Vihiga'){
   df1_ <- df %>%
     dplyr::select(year,season,CDD:ndws) %>%
     tidyr::pivot_longer(cols = 'CDD':'ndws', names_to = 'Indices', values_to = 'Value') %>%
-    unique() %>%
     dplyr::group_split(Indices)
   
   cat('>>> Prepare water balance-based indices: SLGP and LGP\n')
   df2_ <- df %>%
     dplyr::select(year,gSeason:LGP) %>%
     tidyr::pivot_longer(cols = 'SLGP':'LGP', names_to = 'Indices', values_to = 'Value') %>%
-    unique() %>%
     dplyr::group_split(Indices)
   
   # Output folder
