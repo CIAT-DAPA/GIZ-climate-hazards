@@ -24,7 +24,7 @@ adm_lvl <- 1
 iso3c   <- 'NGA'
 Big     <- 'B'
 chain   <- TRUE # Este
-value_chain <- 'Cassava' # Cassava, Soybean, Maize, Maize_north, Maize_south, Cotton, Wheat, Sesame
+value_chain <- 'Wheat' # Cassava, Soybean, Maize, Maize_north, Maize_south, Cotton, Wheat, Sesame
 
 if(isTRUE(chain)){
   vc_tibble <- read.csv(paste0(root, '/NIRSAL/chain.csv')) %>% 
@@ -263,5 +263,5 @@ do_climatology(value_chain  = value_chain,
 # Manual seasons
 do_climatology(value_chain  = value_chain,
                seasons = TRUE,            # Should be TRUE
-               manual  = list(s1 = 4:12), # Should be something like e.g. list(s1 = c(11:12,1:4)
+               manual  = list(s1 = 5:9), # Should be something like e.g. list(s1 = c(11:12,1:4)
                auto    = NULL)            # Should be NULL
