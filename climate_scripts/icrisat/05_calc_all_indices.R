@@ -12,18 +12,18 @@ root <<- switch(OSys,
                 'Linux'   = '/home/jovyan/work/cglabs',
                 'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
 
-calc_indices <- function(country = 'Mozambique',
-                         county  = 'Sofala',
-                         iso3c   = 'MOZ',
+calc_indices <- function(country = 'Senegal',
+                         county  = 'Kaffrine',
+                         iso3c   = 'SEN',
                          adm_lvl = 1,
-                         seasons = NULL, # Seasons manually defined
-                         n_ssns  = 2,    # 2-seasons automatically defined
-                         n_wtts  = 100,  # 100-wettest days
+                         seasons = list(s1 = 6:9), # Seasons manually defined
+                         n_ssns  = NULL,    # 2-seasons automatically defined
+                         n_wtts  = NULL,  # 100-wettest days
                          gcm     = NULL,
                          period  = '1985_2015',
                          time    = 'past',
-                         big_cnt = TRUE,
-                         ncores  = 10){
+                         big_cnt = FALSE,
+                         ncores  = 15){
   
   country <<- country
   county  <<- county
@@ -66,10 +66,12 @@ calc_indices <- function(country = 'Mozambique',
   
   if(!file.exists(out)){
     # Soil data
-    Soil <- fst::read.fst(paste0(root,'/data/soilcp_data.fst')) %>%
-      tibble::as_tibble() %>%
-      dplyr::select(id, soilcp) %>%
-      dplyr::filter(id %in% dplyr::pull(crd, id))
+    Soil <- fst::read_fst(paste0(root,'/data/soilcp_data_icrisat.fst')) %>%
+      dplyr::select(x, y, soilcp) %>%
+      tibble::as_tibble()
+    crd_r <- rasterFromXYZ(xyz = crd %>% dplyr::select(x,y,id) %>% data.frame(), crs = crs(shp))
+    Soil$id <- raster::extract(x = crd_r, y = Soil %>% dplyr::select(x,y) %>% data.frame)
+    Soil <- Soil %>% tidyr::drop_na()
     
     # Read climate data
     if(time == 'past'){
@@ -383,19 +385,20 @@ calc_indices <- function(country = 'Mozambique',
   
 }
 
-# countyList <- c('Kaduna',
-#                 'Plateau')
+# countyList <- c('Tillaberi')
 # for(i in 1:length(countyList)){
-#   calc_indices(country = 'Nigeria',
+#   calc_indices(country = 'Niger',
 #                county  = countyList[i],
-#                iso3c   = 'NGA',
+#                iso3c   = 'NER',
 #                adm_lvl = 1,
-#                seasons = list(s1 = 4:10),
+#                seasons = list(s1 = 6:9), # Seasons manually defined
+#                n_ssns  = NULL,    # 2-seasons automatically defined
+#                n_wtts  = NULL,  # 100-wettest days
 #                gcm     = NULL,
 #                period  = '1985_2015',
 #                time    = 'past',
-#                big_cnt = TRUE,
-#                ncores  = 20)
+#                big_cnt = FALSE,
+#                ncores  = 15)
 # }
 # 
 # gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
@@ -403,34 +406,36 @@ calc_indices <- function(country = 'Mozambique',
 # for(i in 1:length(countyList)){
 #   for(gcm in gcmList){
 #     for(period in periodList){
-#       calc_indices(country = 'Nigeria',
+#       calc_indices(country = 'Niger',
 #                    county  = countyList[i],
-#                    iso3c   = 'NGA',
+#                    iso3c   = 'NER',
 #                    adm_lvl = 1,
-#                    seasons = list(s1 = 4:10),
+#                    seasons = list(s1 = 6:9), # Seasons manually defined
+#                    n_ssns  = NULL,    # 2-seasons automatically defined
+#                    n_wtts  = NULL,  # 100-wettest days
 #                    gcm     = gcm,
 #                    period  = period,
 #                    time    = 'future',
-#                    big_cnt = TRUE,
-#                    ncores  = 20)
+#                    big_cnt = FALSE,
+#                    ncores  = 15)
 #     }
 #   }
 # }
 
-countyList <- c('Siaya','Bungoma','Kakamega','Nyandarua')
+countyList <- c('Kaffrine')
 for(i in 1:length(countyList)){
-  calc_indices(country = 'Kenya',
+  calc_indices(country = 'Senegal',
                county  = countyList[i],
-               iso3c   = 'KEN',
-               adm_lvl = 2,
-               seasons = list(s1 = 2:6, s2 = 7:12), # Seasons manually defined
+               iso3c   = 'SEN',
+               adm_lvl = 1,
+               seasons = list(s1 = 6:9), # Seasons manually defined
                n_ssns  = NULL,    # 2-seasons automatically defined
                n_wtts  = NULL,  # 100-wettest days
                gcm     = NULL,
                period  = '1985_2015',
                time    = 'past',
                big_cnt = FALSE,
-               ncores  = 10)
+               ncores  = 15)
 }
 
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
@@ -438,18 +443,18 @@ periodList <- c('2021_2045','2041_2065')
 for(i in 1:length(countyList)){
   for(gcm in gcmList){
     for(period in periodList){
-      calc_indices(country = 'Kenya',
+      calc_indices(country = 'Senegal',
                    county  = countyList[i],
-                   iso3c   = 'KEN',
-                   adm_lvl = 2,
-                   seasons = list(s1 = 2:6, s2 = 7:12), # Seasons manually defined
+                   iso3c   = 'SEN',
+                   adm_lvl = 1,
+                   seasons = list(s1 = 6:9), # Seasons manually defined
                    n_ssns  = NULL,    # 2-seasons automatically defined
                    n_wtts  = NULL,  # 100-wettest days
                    gcm     = gcm,
                    period  = period,
                    time    = 'future',
                    big_cnt = FALSE,
-                   ncores  = 10)
+                   ncores  = 15)
     }
   }
 }
