@@ -18,8 +18,7 @@ knitr::opts_chunk$set(echo = FALSE)
 :::
 ::::::
 
-#### COUNTY Multi Annual Climate
-
+#### COUNTY Multi Annual Climate with Elevation profile
 :::::: {.columns}
 ::: {.column width="10%"}
 ![](D:/Slides/COUNTRY/COUNTY/COUNTY_elevation.png)

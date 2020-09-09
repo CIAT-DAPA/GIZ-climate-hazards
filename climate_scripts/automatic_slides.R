@@ -8,12 +8,13 @@ suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, rmarkdown))
 
 sld_dir <- 'D:/Slides'
-countiesList <- c('Vihiga')
+
+countiesList <- c('Bungoma','Kiambu','Kirinyaga','Kisii','Kitui','Migori','Muranga','Nandi','Narok','Nyamira','Samburu','Trans-Nzoia','Turkana','Vihiga')
 
 create_slides <- function(country = 'Kenya', iso3 = 'KEN', countiesList = countiesList){
   
   for(county in countiesList){
-    ppt <- readLines('D:/ppt_template.Rmd')
+    ppt <- readLines('D:/ppt_template_kcp.Rmd')
     ppt <- ppt %>%
       purrr::map(.f = function(l){
         l <- gsub(pattern = 'COUNTY', replacement = county, x = l, fixed = T)
@@ -28,3 +29,4 @@ create_slides <- function(country = 'Kenya', iso3 = 'KEN', countiesList = counti
   return('Process done!\n')
   
 }
+create_slides(country = 'Kenya', iso3 = 'KEN', countiesList = countiesList)

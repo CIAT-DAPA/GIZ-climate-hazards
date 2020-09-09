@@ -35,9 +35,10 @@ getAltitude <- function(iso3 = 'KEN', country = 'Kenya', county = 'Vihiga')
               legend.is.portrait = TRUE) +
     tm_shape(adm_c) + 
     tm_borders(lwd = 0.8, col = "gray50") +
-    tm_text("NAME_2", size = 0.8, col = "gray30") +
-    tm_layout(frame = FALSE, legend.title.size = 1,
-              legend.text.size = 0.9,
+    tm_text("NAME_2", size = 2, col = "gray30") +
+    tm_layout(frame = FALSE,
+              legend.title.size = 2.5,
+              legend.text.size = 2,
               legend.position = c("left","top"),
               legend.bg.color = "white")
   
@@ -47,7 +48,7 @@ getAltitude <- function(iso3 = 'KEN', country = 'Kenya', county = 'Vihiga')
   
 }
 
-cnty_list <- c('Trans-Nzoia','Turkana')
+cnty_list <- c('Bungoma','Kiambu','Kirinyaga','Kisii','Kitui','Migori','Muranga','Nandi','Narok','Nyamira','Samburu','Trans-Nzoia','Turkana','Vihiga')
 for(i in 1:length(cnty_list))
 {
   getAltitude(iso3 = 'KEN', country = 'Kenya', county = cnty_list[i])
