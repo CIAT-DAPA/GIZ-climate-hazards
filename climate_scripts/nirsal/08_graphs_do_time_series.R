@@ -9,36 +9,37 @@ options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, fst))
 
-# Paths
-OSys <- Sys.info()[1]
-root <<- switch(OSys,
-                'Linux'   = '/home/jovyan/work/cglabs',
-                'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
 
-country <- 'Nigeria'
-county  <- c('Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Benue','Borno','Cross River','Delta',
-             'Ebonyi','Edo','Ekiti','Enugu','FCT Abuja','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina',
-             'Kebbi','Kogi','Kwara','Lagos','Nassarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau',
-             'Rivers','Sokoto','Taraba','Yobe','Zamfara')
-adm_lvl <- 1
-iso3c   <- 'NGA'
-Big     <- 'B'
-chain   <- TRUE # Este
-value_chain <- 'Wheat' # Cassava, Soybean, Maize, Maize_north, Maize_south, Cotton, Wheat, Sesame
+################################################################################################
 
-if(isTRUE(chain)){
-  vc_tibble <- read.csv(paste0(root, '/NIRSAL/chain.csv')) %>% 
-    tibble::as_tibble() %>% 
-    dplyr::select(County, value_chain) 
-  county <- vc_tibble[which(vc_tibble[,2] == 'X'), ] %>% pull(County) %>% as.character()
-}else{
-  print('All Country')
-}
+# if(isTRUE(chain)){
+#   vc_tibble <- read.csv('climate_scripts/nirsal/chain_new.csv', stringsAsFactors = FALSE, 
+#                         header = TRUE, fileEncoding="UTF-8-BOM") %>% 
+#     tibble::as_tibble() %>% 
+#     dplyr::select(value_chain, geopolitical_zone, states) 
+#   county <- vc_tibble[which(vc_tibble[,2] == 'X'), ] %>% pull(County) %>% as.character()
+# }else{
+#   print('All Country')
+# }
 
-time_series_plot <- function(value_chain = 'Maize'){
-  
+# get the states to plot for each value chain
+
+time_series_plot <- function(gzone, subvc, toremove, root){
   country <<- country
-  county  <<- county
+  
+  # input parameters
+  subvcz <- subvc[subvc$geopolitical_zone == gzone,]
+  sts <- unique(trimws(unlist(strsplit(subvcz$states, ","))))
+  # remove states with no data yet
+  sts <- sts[!(sts %in% toremove)]
+  
+  value_chain <- unique(subvcz$value_chain)
+  county  <- sts
+  
+  cat("processing ", value_chain, "for", gzone, "\n")
+  
+  # start loading data
+  # past
   cat('>>> Load indices for the historical period\n')
   past <- county %>%
     purrr::map(.f = function(cnt){
@@ -46,6 +47,7 @@ time_series_plot <- function(value_chain = 'Maize'){
     }) %>%
     dplyr::bind_rows()
   
+  # future
   cat('>>> Load indices for the future period\n')
   futDir  <- paste0(root,'/NIRSAL/Nigeria_',value_chain,'/future')
   fut_fls <- county %>%
@@ -53,6 +55,7 @@ time_series_plot <- function(value_chain = 'Maize'){
       fls <- list.files(futDir, pattern = paste0('^',cnt,'_[0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9]_corrected_idw.fst'), recursive = T)
     }) %>%
     unlist()
+  
   fut_fls <- paste0(futDir,'/',fut_fls)
   future  <- fut_fls %>%
     purrr::map(.f = function(x){df <- fst::read_fst(x); return(df)}) %>%
@@ -63,10 +66,12 @@ time_series_plot <- function(value_chain = 'Maize'){
   if('semester' %in% colnames(df)){
     colnames(df)[which(colnames(df) == 'semester')] <- 'season'
   }
+  
   if('1' %in% df$season){gsub('1', 's1', x = df$season, fixed = T)}
   if('2' %in% df$season){gsub('2', 's2', x = df$season, fixed = T)}
   
   cat('>>> Prepare climatology-based indices: CDD, P5D, P95, NT35, NDWS\n')
+  
   df1_ <- df %>%
     dplyr::select(year,season,CDD:ndws) %>%
     tidyr::pivot_longer(cols = 'CDD':'ndws', names_to = 'Indices', values_to = 'Value') %>%
@@ -80,7 +85,7 @@ time_series_plot <- function(value_chain = 'Maize'){
   
   # Output folder
   outDir <- paste0(root,'/NIRSAL/Nigeria_',value_chain,'/graphs/time_series')
-  if(!dir.exists(outDir)){dir.create(outDir, recursive = T)}
+  dir.create(outDir, FALSE, TRUE)
   
   cat('>>> Creating graphs for climatology-based indicators\n')
   df1_ %>%
@@ -121,7 +126,7 @@ time_series_plot <- function(value_chain = 'Maize'){
             ggplot2::geom_ribbon(data = df_summ2 %>% dplyr::filter(Serie == 'Fut'), aes(ymin = CI_lower, ymax = CI_upper, fill = season), color = "grey70", alpha = 0.4) +
             ggplot2::geom_smooth(data = df_summ2, method = "loess", color = "blue", alpha = 0.8, se = FALSE) +
             ggplot2::labs(title    = tbl$Indices %>% unique,
-                          subtitle = paste0(country,", ",value_chain),
+                          subtitle = paste(country, unique(subvcz$geopolitical_zone),value_chain, sep = ", "),
                           caption  = "Data source: Alliance Bioversity-CIAT") +
             ggplot2::theme_bw() +
             ggplot2::theme(axis.text       = element_text(size = 17),
@@ -138,7 +143,7 @@ time_series_plot <- function(value_chain = 'Maize'){
           if(idx == 'P95'){plt <- plt + ggplot2::ylab('P95 (mm/day)')}
           if(idx == 'NT35'){plt <- plt + ggplot2::ylab('NT35 (days)')}
           if(idx == 'ndws'){plt <- plt + ggplot2::ylab('ndws (days)')}
-          ggplot2::ggsave(filename = paste0(outDir,'/ts_',tbl$Indices %>% unique,'_season_',i,'.png'), plot = plt, device = "png", width = 12, height = 6, units = "in")
+          ggplot2::ggsave(filename = paste0(outDir,'/ts_',unique(subvcz$geopolitical_zone),"_",tbl$Indices %>% unique,'_season_',i,'.png'), plot = plt, device = "png", width = 12, height = 6, units = "in")
         })
       
       return(cat('Graphs done\n'))
@@ -185,7 +190,7 @@ time_series_plot <- function(value_chain = 'Maize'){
             ggplot2::geom_ribbon(data = df_summ2 %>% dplyr::filter(Serie == 'Fut'), aes(ymin = CI_lower, ymax = CI_upper, fill = gSeason), color = "grey70", alpha = 0.4) +
             ggplot2::geom_smooth(data = df_summ2, method = "loess", color = "blue", alpha = 0.8, se = FALSE) +
             ggplot2::labs(title    = tbl$Indices %>% unique,
-                          subtitle = paste0(country,", ",value_chain),
+                          subtitle = paste(country, unique(subvcz$geopolitical_zone),value_chain, sep = ", "),
                           caption  = "Data source: Alliance Bioversity-CIAT") +
             ggplot2::theme_bw() +
             ggplot2::theme(axis.text       = element_text(size = 17),
@@ -199,7 +204,7 @@ time_series_plot <- function(value_chain = 'Maize'){
             ggplot2::facet_wrap(~gSeason, labeller = labeller(gSeason = sem.labs))
           if(idx == 'SLGP'){plt <- plt + ggplot2::ylab('SLGP (Day of\nthe year)')}
           if(idx == 'LGP'){plt <- plt + ggplot2::ylab('LGP (days)')}
-          ggplot2::ggsave(filename = paste0(outDir,'/ts_',tbl$Indices %>% unique,'_season_',i,'.png'), plot = plt, device = "png", width = 12, height = 6, units = "in")
+          ggplot2::ggsave(filename = paste0(outDir,'/ts_', unique(subvcz$geopolitical_zone),"_", tbl$Indices %>% unique,'_season_',i,'.png'), plot = plt, device = "png", width = 12, height = 6, units = "in")
         })
       
       return(cat('Graphs done\n'))
@@ -207,4 +212,48 @@ time_series_plot <- function(value_chain = 'Maize'){
   
   cat('>>> Graphics done.\n')
 }
-time_series_plot(value_chain = value_chain)
+
+#################################################################################################################################
+# setup input parameters
+# Paths
+# OSys <- Sys.info()[1]
+# root <<- switch(OSys,
+#                 'Linux'   = '/home/jovyan/work/cglabs',
+#                 'Windows' = '//dapadfs.cgiarad.org/workspace_cluster_8/climateriskprofiles')
+
+root <- "C:\\Users\\anibi\\Documents\\ciat\\climate_profiles\\NIRSAL"
+
+country <- 'Nigeria'
+countylist  <- c('Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Benue','Borno','Cross River','Delta',
+             'Ebonyi','Edo','Ekiti','Enugu','FCT Abuja','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina',
+             'Kebbi','Kogi','Kwara','Lagos','Nassarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau',
+             'Rivers','Sokoto','Taraba','Yobe','Zamfara')
+adm_lvl <- 1
+iso3c   <- 'NGA'
+Big     <- 'B'
+chain   <- TRUE # Este
+# value_chain <- 'Soybean' # Cassava, Soybean, Maize, Maize, Cotton, Wheat, Sesame
+
+################################################################################################
+# making sure all states are present
+vc <- read.csv('climate_scripts/nirsal/chain_new.csv', stringsAsFactors = FALSE, 
+               header = TRUE, fileEncoding="UTF-8-BOM")
+
+cc <- unique(trimws(unlist(strsplit(vc$states, ","))))
+# remove the states/counties for which we don't the results yet
+toremove <- cc[!cc %in% countylist]
+
+
+################################################################################################
+# create plots for all value chains
+
+for (value_chain in unique(vc$value_chain)){
+  # subset for value chain
+  subvc <- vc[vc$value_chain == value_chain, ]
+ 
+  # unique regions for the values chain
+  gzones <- unique(subvc$geopolitical_zone)
+  
+  lapply(gzones, time_series_plot, subvc, toremove, root)
+  
+}
