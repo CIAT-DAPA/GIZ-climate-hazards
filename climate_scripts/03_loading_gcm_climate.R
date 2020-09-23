@@ -164,4 +164,4 @@ get_gcm_data <- function(country = 'Pakistan',
 # Run once
 # gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m","bnu_esm","cccma_canesm2","cmcc_cms","gfdl_esm2g")
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
-get_gcm_data(country='Nigeria',county='Zamfara',iso3='NGA',adm_lvl=1,gcm_list=gcmList)
+get_gcm_data(country='Kenya',county='Turkana',iso3='KEN',adm_lvl=1,gcm_list=gcmList)

@@ -533,13 +533,13 @@ gcmDailyFutureResample <- function(country = 'Pakistan',
 
 # Explanation about how to run this script
 ## 1. Write country name
-cntry <- 'Nigeria'
+cntry <- 'Kenya'
 ## 2. Write GCM list
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 ## 3. Define period list
 periodList <- c("2021_2045", "2041_2065")
 
-####### The next two functions can be run indepently
+####### The next two functions can be run independently
 ####### Clip GCM historical data
 gcmDailyProcess(country = cntry, gcmList = gcmList, ncores = length(gcmList))
 ####### Clip GCM future data
@@ -553,7 +553,7 @@ lapply(1:length(periodList), function(p){
   return(cat('Process done for period:', periodList[p],'\n'))
 })
 
-####### The next two functions can be run indepently
+####### The next two functions can be run independently
 ####### Downscale GCM historical data (depends that gcmDailyProcess has finished)
 gcmDailyResample(country = cntry, gcmList = gcmList, ncores = length(gcmList))
 ####### Downscale GCM future data (depends that gcmDailyFutureProcess has finished)
