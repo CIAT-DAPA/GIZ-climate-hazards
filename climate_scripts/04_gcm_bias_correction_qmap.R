@@ -178,6 +178,6 @@ rcpList    <- 'rcp85'
 gcmList <- c("ipsl_cm5a_mr","miroc_esm_chem","ncc_noresm1_m")
 for(p in periodList){
   for(gcm in gcmList){
-    BC_Qmap(country='Niger',county='Tillaberi',rcp='rcp85',gcm=gcm,period=p,ncores=5)
+    BC_Qmap(country='Nigeria',county='Bayelsa',rcp='rcp85',gcm=gcm,period=p,ncores=5)
   }
 }

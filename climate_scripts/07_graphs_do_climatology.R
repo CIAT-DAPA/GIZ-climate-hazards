@@ -232,21 +232,23 @@ do_climatology <- function(country = 'Kenya',
 }
 
 ## Coding examples
-# No seasons
-do_climatology(country = 'Senegal',
-               county  = 'Kaffrine',
-               seasons = FALSE, # Should be FALSE
-               manual  = NULL,  # Should be NULL
-               auto    = NULL)  # Should be NULL
-# Manual seasons
-do_climatology(country = 'Senegal',
-               county  = 'Kaffrine',
-               seasons = TRUE,           # Should be TRUE
-               manual  = list(s1 = 6:9), # Should be something like e.g. list(s1 = c(11:12,1:4)
-               auto    = NULL)           # Should be NULL
-# Auto seasons
-do_climatology(country = 'Kenya',
-               county  = 'Vihiga',
-               seasons = TRUE,        # Should be TRUE
-               manual  = NULL,        # Should be NULL
-               auto    = list(n = 2)) # Should be something like e.g. list(n = 2)
+# # No seasons
+# do_climatology(country = 'Senegal',
+#                county  = 'Kaffrine',
+#                seasons = FALSE, # Should be FALSE
+#                manual  = NULL,  # Should be NULL
+#                auto    = NULL)  # Should be NULL
+
+# # Manual seasons
+# do_climatology(country = 'Senegal',
+#                county  = 'Kaffrine',
+#                seasons = TRUE,           # Should be TRUE
+#                manual  = list(s1 = 6:9), # Should be something like e.g. list(s1 = c(11:12,1:4)
+#                auto    = NULL)           # Should be NULL
+
+# # Auto seasons
+# do_climatology(country = 'Kenya',
+#                county  = 'Vihiga',
+#                seasons = TRUE,        # Should be TRUE
+#                manual  = NULL,        # Should be NULL
+#                auto    = list(n = 2)) # Should be something like e.g. list(n = 2)
