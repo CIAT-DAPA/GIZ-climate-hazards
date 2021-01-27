@@ -1,8 +1,35 @@
-library(compiler)
-# Agro-climatic indices main functions
-# H. Achicanoy and A. Esquivel
-# CIAT, 2020
+# Main functions
+# By: A. Esquivel & H. Achicanoy
+# Alliance CIAT-Bioversity, 2020
 
+options(warn = -1, scipen = 999)
+suppressMessages(library(compiler))
+suppressMessages(if(!require(pacman)){install.packages('pacman'); library(pacman)})
+
+clusterExport <- local({
+  gets <- function(n, v) { assign(n, v, envir = .GlobalEnv); NULL }
+  function(cl, list, envir = .GlobalEnv) {
+    ## do this with only one clusterCall--loop on slaves?
+    for (name in list) {
+      clusterCall(cl, gets, name, get(name, envir = envir))
+    }
+  }
+})
+createCluster <- function(noCores, logfile = "/dev/null", export = NULL, lib = NULL) {
+  require(doSNOW)
+  cl <- makeCluster(noCores, type = "SOCK", outfile = logfile)
+  if(!is.null(export)) clusterExport(cl, export)
+  if(!is.null(lib)) {
+    plyr::l_ply(lib, function(dum) { 
+      clusterExport(cl, "dum", envir = environment())
+      clusterEvalQ(cl, library(dum, character.only = TRUE))
+    })
+  }
+  registerDoSNOW(cl)
+  return(cl)
+}
+
+# Agro-climatic indices
 rsum.lapply <- function(x, n=3L) # Calculate rollin sum
 {
   lapply(1:(length(x)-n+1), function(i)
@@ -18,7 +45,6 @@ rsum.lapply <- function(x, n=3L) # Calculate rollin sum
 }
 cumulative.r.sum <- function(results){ unlist(lapply(results, function(x){z <- x[[1]]; return(z)})) } # Extract the SUM
 is.leapyear <- function(year){ return(((year %% 4 == 0) & (year %% 100 != 0)) | (year %% 400 == 0)) } # Function to identify leap years
-
 
 ## CDD. Maximum number of consecutive dry days
 calc_cdd <- function(PREC, p_thresh=1){
@@ -68,7 +94,6 @@ tmean <- function(tmax, tmin, season_ini=1, season_end=365){
 
 tmeanCMP <- compiler::cmpfun(tmean)
 
-
 ### Total prec at year ***
 calc_totprec <- function(prec){
   totprec <- sum(prec, na.rm=T)
@@ -76,7 +101,6 @@ calc_totprec <- function(prec){
 }
 
 calc_totprecCMP <- compiler::cmpfun(calc_totprec)
-
 
 ### Maximum number of consecutive dry days, prec < 1 mm
 dr_stress <- function(PREC, p_thresh=1){
@@ -87,13 +111,11 @@ dr_stress <- function(PREC, p_thresh=1){
 
 dr_stressCMP <- compiler::cmpfun(dr_stress)
 
-
 ### number of prec days
 calc_precdays <- function(x, season_ini=1, season_end=365, p_thresh=0.1) {
   precdays <- length(which(x$prec[season_ini:season_end] > p_thresh))
   return(precdays)
 }
-
 
 ### maximum consecutive dry days
 calc_max_cdd <- function(x, year=2000, season_ini=1, season_end=365, p_thresh=0.1) {
@@ -110,7 +132,6 @@ calc_max_cdd <- function(x, year=2000, season_ini=1, season_end=365, p_thresh=0.
   return(max_cdd)
 }
 
-
 ### mean consecutive dry days
 calc_mean_cdd <- function(x, season_ini=1, season_end=365, p_thresh=0.1) {
   cdd <- 0; cdd_seq <- c()
@@ -126,7 +147,6 @@ calc_mean_cdd <- function(x, season_ini=1, season_end=365, p_thresh=0.1) {
   return(mean_cdd)
 }
 
-
 ### number of prec days
 calc_txxdays <- function(x, season_ini=1, season_end=365, t_thresh=30) {
   x$TDAY <- x$tmax*0.75 + x$tmin*0.25 #day temperature
@@ -134,14 +154,12 @@ calc_txxdays <- function(x, season_ini=1, season_end=365, t_thresh=30) {
   return(txxdays)
 }
 
-
 ### number of prec days
 calc_tnndays <- function(x, season_ini=1, season_end=365, t_thresh=10) {
   x$TDAY <- x$tmax*0.75 + x$tmin*0.25 #day temperature
   tnndays <- length(which(x$TDAY[season_ini:season_end] < t_thresh))
   return(tnndays)
 }
-
 
 ### calculate soilcap in mm
 soilcap_calc <- function(x, minval, maxval) {
@@ -162,7 +180,6 @@ soilcap_calc <- function(x, minval, maxval) {
   soilcp <- sum(wc_df$soilcap) * 10 #in mm
   return(soilcp)
 }
-
 
 #potential evapotranspiration
 peest <- function(srad, tmin, tmax) {
@@ -207,7 +224,6 @@ peest <- function(srad, tmin, tmax) {
   return(et_max)
 }
 
-
 #the two functions below estimate the ea/ep
 #based on Jones (1987)
 #ea/ep: actual to potential evapotranspiration ratio
@@ -226,7 +242,6 @@ eabyep_calc <- function(soilcp=100, cropfc=1, avail=50, prec, evap) {
   return(out)
 }
 
-
 #ea/ep function
 eabyep <- function(soilcp, avail) {
   percwt <- min(c(100,avail/soilcp*100))
@@ -234,7 +249,6 @@ eabyep <- function(soilcp, avail) {
   eratio <- min(c(percwt/(97-3.868*sqrt(soilcp)),1))
   return(eratio)
 }
-
 
 #wrapper to calculate the water balance modeling variables
 watbal_wrapper <- function(out_all, soilcp){
@@ -262,7 +276,6 @@ watbal_wrapper <- function(out_all, soilcp){
   return(out_all)
 }
 
-
 #calculate number of water stress days
 calc_wsdays <- function(ERATIO, season_ini=1, season_end=365, e_thresh=0.3) {
   wsdays <- length(which(ERATIO[season_ini:season_end] < e_thresh))
@@ -270,7 +283,6 @@ calc_wsdays <- function(ERATIO, season_ini=1, season_end=365, e_thresh=0.3) {
 }
 
 calc_wsdaysCMP <- compiler::cmpfun(calc_wsdays)
-
 
 ### HTS1, HTS2, LETHAL: heat stress using tmax ***
 calc_hts <- function(tmax, season_ini=1, season_end=365, t_thresh=35) {
@@ -280,7 +292,6 @@ calc_hts <- function(tmax, season_ini=1, season_end=365, t_thresh=35) {
 
 calc_htsCMP <- compiler::cmpfun(calc_hts)
 
-
 ### CD: crop duration, if Tmean > (22, 23, 24) then CD=T-23, else CD=0 ***
 calc_cdur <- function(TMEAN, season_ini=1, season_end=365, t_thresh=35){
   tmean <- mean(TMEAN[season_ini:season_end], na.rm=T)
@@ -288,7 +299,6 @@ calc_cdur <- function(TMEAN, season_ini=1, season_end=365, t_thresh=35){
   return(cdur)
 }
 calc_cdurCMP <- compiler::cmpfun(calc_cdur)
-
 
 #DS2: max number of consecutive days Ea/Ep < 0.4, 0.5, 0.6
 calc_cons_wsdays <- function(x, season_ini=1, season_end=365, e_thresh=0.4) {
@@ -306,7 +316,6 @@ calc_cons_wsdays <- function(x, season_ini=1, season_end=365, e_thresh=0.4) {
   return(max_cdd)
 }
 
-
 #ATT: accum thermal time using capped top, Tb=7,8,9, To=30,32.5,35
 calc_att <- function(x, season_ini=1, season_end=365, tb=10, to=20) {
   x$TMEAN <- (x$tmin + x$tmax) * 0.5
@@ -314,7 +323,6 @@ calc_att <- function(x, season_ini=1, season_end=365, tb=10, to=20) {
   att <- sum(att,na.rm=T)
   return(att)
 }
-
 
 #function to calc tt
 ttfun <- function(tmean, tb, to) {
@@ -328,7 +336,6 @@ ttfun <- function(tmean, tb, to) {
   return(teff)
 }
 
-
 #DLOSS: duration loss (difference between No. days to reach ATT_baseline in future vs. baseline)
 calc_dloss <- function(x, season_ini, dur_b=110, att_b=5000, tb=10, to=20) {
   x$TMEAN <- (x$tmin + x$tmax) * 0.5
@@ -339,14 +346,12 @@ calc_dloss <- function(x, season_ini, dur_b=110, att_b=5000, tb=10, to=20) {
   return(dloss)
 }
 
-
 #WES: wet early season if period between sowing and anthesis is above field cap. >= 50 % time
 #     i.e. frequency of days if RUNOFF > 1
 calc_wes <- function(x, season_ini, season_end, r_thresh=1) {
   wes <- length(which(x$RUNOFF[season_ini:season_end] > r_thresh))
   return(wes)
 }
-
 
 #BADSOW: no. days in sowing window +-15 centered at sdate with 0.05*SOILCP < AVAIL < 0.9*SOILCP
 #        if this is < 3 then crop runs into trouble
@@ -357,7 +362,6 @@ calc_badsow <- function(x, season_ini, soilcp) {
   badsow <- length(which(x$AVAIL > (0.05*soilcp) & x$AVAIL < (0.9*soilcp)))
   return(badsow)
 }
-
 
 #BADHAR: no. days in harvest window (+25 after hdate) with AVAIL < 0.85*SOILCP
 #        if this is < 3 then crop runs into trouble

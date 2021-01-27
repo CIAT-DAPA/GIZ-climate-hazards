@@ -2,8 +2,6 @@
 # By: H. Achicanoy
 # CIAT, 2020
 
-options(warn = -1, scipen = 999)
-suppressMessages(library(pacman))
 pacman::p_load(raster, tidyverse, fst, GSIF, vroom)
 
 root_depth <- 60 # cm
